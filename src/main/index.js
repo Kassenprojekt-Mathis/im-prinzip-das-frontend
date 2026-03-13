@@ -2,6 +2,13 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import {
+  getAvailablePrinters,
+  setPrinter,
+  getCurrentPrinter,
+  printReceipt,
+  printTestReceipt
+} from './printerService'
 
 function createWindow() {
   // Create the browser window.
@@ -51,6 +58,28 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // ── Printer IPC Handlers ──
+  ipcMain.handle('printer:getAvailable', async () => {
+    return await getAvailablePrinters()
+  })
+
+  ipcMain.handle('printer:getCurrent', () => {
+    return getCurrentPrinter()
+  })
+
+  ipcMain.handle('printer:set', (_event, printerName) => {
+    setPrinter(printerName)
+    return { success: true, printer: printerName }
+  })
+
+  ipcMain.handle('printer:printReceipt', async (_event, receiptData) => {
+    return await printReceipt(receiptData)
+  })
+
+  ipcMain.handle('printer:printTest', async () => {
+    return await printTestReceipt()
+  })
 
   createWindow()
 

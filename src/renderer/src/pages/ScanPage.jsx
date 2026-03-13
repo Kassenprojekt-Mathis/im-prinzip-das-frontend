@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { scannerApi } from '../api/scannerAPI'
 
 // ── Auf true setzen um den Debug-Bereich anzuzeigen ──
 const DEV_MODE = true
 
 export default function ScanPage() {
+  const navigate = useNavigate()
   const [barcode, setBarcode] = useState('')
   const [scannedItems, setScannedItems] = useState([])
   const [error, setError] = useState(null)
@@ -121,6 +123,17 @@ export default function ScanPage() {
           ⚠️ {error}
         </div>
       )}
+
+      {/* ── Weiter-Button ── */}
+      <div className="mt-4 pt-3 border-t border-gray-200">
+        <button
+          onClick={() => navigate('/summary', { state: { items: scannedItems } })}
+          disabled={scannedItems.length === 0}
+          className="w-full py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          WEITER ZUR ZUSAMMENFASSUNG →
+        </button>
+      </div>
     </div>
   )
 }

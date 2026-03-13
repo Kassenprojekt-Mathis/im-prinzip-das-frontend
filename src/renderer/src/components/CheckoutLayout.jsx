@@ -26,8 +26,8 @@ export default function CheckoutLayout() {
       {/* ================= HEADER ================= */}
       <header className="flex justify-between items-center mb-2 md:mb-4">
         {/* Logo */}
-        <div className="h-10 w-32 md:h-14 md:w-40 lg:h-16 lg:w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md">
-          <img src={logoPrinzip} alt="Prinzip Logo" className="max-h-full" />
+        <div className="h-16 w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md">
+          <img src={logoPrinzip} alt="Prinzip Logo" />
         </div>
 
         {/* Hilfe Button */}

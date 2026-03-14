@@ -6,7 +6,7 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
-        external: ['escpos-javascript']
+        external: ['escpos-javascript', 'tp-link-tapo-connect', 'dotenv']
       }
     }
   },

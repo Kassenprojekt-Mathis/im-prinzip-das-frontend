@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scannerApi } from '../api/scannerAPI'
 
-// ── Auf true setzen um den Debug-Bereich anzuzeigen ──
+// ── debug screen = true, for presentation = false ──
 const DEV_MODE = true
 
 export default function ScanPage() {
@@ -12,7 +12,7 @@ export default function ScanPage() {
   const [error, setError] = useState(null)
   const inputRef = useRef(null)
 
-  // ── Input immer fokussiert halten, damit der Scanner sofort schreiben kann ──
+  // fukus immer auf input feld setzen -> für scanner
   useEffect(() => {
     const keepFocus = () => {
       if (inputRef.current) {
@@ -22,7 +22,6 @@ export default function ScanPage() {
 
     keepFocus()
 
-    // Bei Klick oder Fenster-Fokus den Input wieder fokussieren
     window.addEventListener('click', keepFocus)
     window.addEventListener('focus', keepFocus)
     return () => {
@@ -31,7 +30,6 @@ export default function ScanPage() {
     }
   }, [])
 
-  // ── Barcode absenden (bei Enter) ──
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -43,24 +41,32 @@ export default function ScanPage() {
     try {
       const product = await scannerApi.sendBarcode(scannedCode)
       setScannedItems((prev) => [...prev, product])
+
+      // ── Tapo: Grün blinken ──
+      window.api?.tapo?.flashGreen().catch((e) =>
+        console.warn('Tapo flashGreen fehlgeschlagen:', e.message)
+      )
     } catch (err) {
       console.error('Scan-Fehler:', err.message)
       setError(err.message)
 
-      // Platzhalter: Solange kein Backend läuft, trotzdem den Code anzeigen
+      // ── Tapo: Rot blinken ──
+      window.api?.tapo?.flashRed().catch((e) =>
+        console.warn('Tapo flashRed fehlgeschlagen:', e.message)
+      )
+
+      // platzhalter bis backend angebunden ist
       setScannedItems((prev) => [
         ...prev,
         { barcode: scannedCode, name: `Unbekannt (${scannedCode})`, price: 0 }
       ])
     }
 
-    // Input leeren für den nächsten Scan
     setBarcode('')
   }
 
   return (
     <div className="h-full flex flex-col">
-      {/* ── Eingabefeld: Scanner + manuelle Eingabe ── */}
       <form onSubmit={handleSubmit}>
         <input
           ref={inputRef}
@@ -78,7 +84,6 @@ export default function ScanPage() {
         />
       </form>
 
-      {/* ── DEV: Debug-Info ── */}
       {DEV_MODE && (
         <div className="mb-3 p-2 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-800">
           🔧 <strong>DEV-Modus aktiv</strong> — Input ist sichtbar für manuelle Eingabe. Setze{' '}
@@ -86,7 +91,6 @@ export default function ScanPage() {
         </div>
       )}
 
-      {/* ── Scan-Hinweis ── */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         {scannedItems.length === 0 ? (
           <div className="text-gray-400">
@@ -117,14 +121,12 @@ export default function ScanPage() {
         )}
       </div>
 
-      {/* ── Fehlermeldung ── */}
       {error && (
         <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           ⚠️ {error}
         </div>
       )}
 
-      {/* ── Weiter-Button ── */}
       <div className="mt-4 pt-3 border-t border-gray-200">
         <button
           onClick={() => navigate('/summary', { state: { items: scannedItems } })}

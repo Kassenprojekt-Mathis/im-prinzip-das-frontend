@@ -7,6 +7,7 @@ import CheckoutLayout from './components/CheckoutLayout'
 import ScanPage from './pages/ScanPage'
 import SummaryPage from './pages/SummaryPage'
 import PaymentPage from './pages/PaymentPage'
+import PaymentFinishedPage from './pages/PaymentFinishedPage'
 
 //Routen
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="scan" element={<ScanPage />} />
           <Route path="summary" element={<SummaryPage />} />
           <Route path="payment" element={<PaymentPage />} />
+          <Route path="reminder" element={<PaymentFinishedPage />} />
         </Route>
       </Routes>
     </HashRouter>

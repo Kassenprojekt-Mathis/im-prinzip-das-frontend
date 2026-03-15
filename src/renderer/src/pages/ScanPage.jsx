@@ -125,7 +125,7 @@ export default function ScanPage() {
         ))}
       </div>
 
-      {/* ================= RESET BUTTON ================= */}
+      {/* letzten Artiekl löschen */}
 
       <div className="flex justify-center mt-6">
         <button

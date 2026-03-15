@@ -10,8 +10,9 @@ export default function ScanPage() {
     { name: 'Backwaren', img: croissant }
   ]
 
+  //MockDaten zum Testen
+
   const products = {
-    //MockDaten zum Testen
     Obst: [
       { id: 1, name: 'Apfel' },
       { id: 2, name: 'Banane' },
@@ -64,7 +65,7 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* ================= CATEGORY MENU ================= */}
+      {/* Kategorien */}
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {categories.map((cat) => (
@@ -85,7 +86,7 @@ export default function ScanPage() {
         ))}
       </div>
 
-      {/* ================= PRODUCT GRID ================= */}
+      {/* Produkte --> überarbeiten sobald Backend Anbindung steht*/}
 
       <div className="grid grid-cols-3 gap-6 flex-1">
         {products[activeCategory].map((item) => (
@@ -113,7 +114,7 @@ export default function ScanPage() {
               </button>
             </div>
 
-            {/* Image, Platzhaler für später wenn Backend angebunden ist & Image aus DB geladen wirdc  */}
+            {/* Image, Platzhaler für später wenn Backend angebunden ist & Image aus DB geladen wird */}
 
             {/* <img src={item.img} alt={item.name} className="h-20 object-contain" /> */}
 

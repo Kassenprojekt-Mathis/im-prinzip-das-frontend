@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scannerApi } from '../api/scannerAPI'
 
-// ── debug screen = true, for presentation = false ──
+// debug screen = true, for presentation = false
 const DEV_MODE = true
 
 export default function ScanPage() {
@@ -12,7 +12,7 @@ export default function ScanPage() {
   const [error, setError] = useState(null)
   const inputRef = useRef(null)
 
-  // fukus immer auf input feld setzen -> für scanner
+  // fokus immer auf input feld setzen -> für scanner
   useEffect(() => {
     const keepFocus = () => {
       if (inputRef.current) {
@@ -129,11 +129,11 @@ export default function ScanPage() {
 
       <div className="mt-4 pt-3 border-t border-gray-200">
         <button
-          onClick={() => navigate('/summary', { state: { items: scannedItems } })}
+          onClick={() => navigate('/payment', { state: { items: scannedItems } })}
           disabled={scannedItems.length === 0}
           className="w-full py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          WEITER ZUR ZUSAMMENFASSUNG →
+          WEITER ZUR ZAHLUNG →
         </button>
       </div>
     </div>

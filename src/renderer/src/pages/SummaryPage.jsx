@@ -6,14 +6,15 @@ export default function SummaryPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // ── State ──
+  // State
   const [printers, setPrinters] = useState([])
   const [currentPrinter, setCurrentPrinter] = useState('')
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null) // { type: 'success'|'error', message: string }
 
-  // ── Gescannte Artikel aus der ScanPage übernehmen ──
+  // Daten aus der PaymentPage übernehmen 
   const scannedItems = location.state?.items || []
+  const paymentMethod = location.state?.paymentMethod || 'Bar'
 
   // Artikel zusammenfassen (gleiche Artikel gruppieren und Menge zählen)
   const items = scannedItems.reduce((acc, item) => {
@@ -29,7 +30,7 @@ export default function SummaryPage() {
 
   const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
 
-  // ── Drucker beim Laden abfragen ──
+  // Drucker beim Laden abfragen
   useEffect(() => {
     async function loadPrinters() {
       try {
@@ -46,7 +47,7 @@ export default function SummaryPage() {
     loadPrinters()
   }, [])
 
-  // ── Drucker wechseln ──
+  // Drucker wechseln
   const handlePrinterChange = async (e) => {
     const name = e.target.value
     setCurrentPrinter(name)
@@ -58,7 +59,7 @@ export default function SummaryPage() {
     }
   }
 
-  // ── Bon drucken ──
+  // Bon drucken
   const handlePrint = async () => {
     setIsPrinting(true)
     setPrintStatus(null)
@@ -67,7 +68,7 @@ export default function SummaryPage() {
         storeName: 'Im Prinzip',
         items,
         total,
-        paymentMethod: 'Bar',
+        paymentMethod,
         footer: 'Vielen Dank fuer Ihren Einkauf!'
       })
       setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
@@ -78,7 +79,7 @@ export default function SummaryPage() {
     }
   }
 
-  // ── Test-Bon drucken ──
+  // Test-Bon drucken
   const handleTestPrint = async () => {
     setIsPrinting(true)
     setPrintStatus(null)
@@ -94,7 +95,6 @@ export default function SummaryPage() {
 
   return (
     <div className="h-full flex flex-col gap-4">
-      {/* ── Überschrift ── */}
       <h1 className="text-xl font-bold text-[#1e1e38]">Zusammenfassung</h1>
 
       {/* ── Artikel-Liste ── */}
@@ -191,16 +191,16 @@ export default function SummaryPage() {
       {/* ── Navigation ── */}
       <div className="flex gap-3 pt-2 border-t border-gray-200">
         <button
-          onClick={() => navigate('/scan')}
+          onClick={() => navigate('/payment', { state: { items: scannedItems } })}
           className="px-6 py-2.5 text-sm font-bold border-2 border-gray-300 bg-white text-gray-600 rounded-lg hover:bg-gray-50 active:scale-95 transition-transform"
         >
           ← ZURÜCK
         </button>
         <button
-          onClick={() => navigate('/payment')}
+          onClick={() => navigate('/scan')}
           className="flex-1 py-2.5 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
         >
-          WEITER ZUR ZAHLUNG →
+          NEUER EINKAUF
         </button>
       </div>
     </div>

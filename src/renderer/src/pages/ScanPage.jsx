@@ -1,137 +1,158 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { scannerApi } from '../api/scannerAPI'
-
-// debug screen = true, for presentation = false
-const DEV_MODE = true
+import apfel from '../../../../resources/apfel.png'
+import karotte from '../../../../resources/karotte.png'
+import croissant from '../../../../resources/croissant.png'
 
 export default function ScanPage() {
   const navigate = useNavigate()
-  const [barcode, setBarcode] = useState('')
-  const [scannedItems, setScannedItems] = useState([])
-  const [error, setError] = useState(null)
-  const inputRef = useRef(null)
 
-  // fokus immer auf input feld setzen -> für scanner
-  useEffect(() => {
-    const keepFocus = () => {
-      if (inputRef.current) {
-        inputRef.current.focus()
-      }
-    }
+  const categories = [
+    { name: 'Obst', img: apfel },
+    { name: 'Gemüse', img: karotte },
+    { name: 'Backwaren', img: croissant }
+  ]
 
-    keepFocus()
+  //MockDaten zum Testen
 
-    window.addEventListener('click', keepFocus)
-    window.addEventListener('focus', keepFocus)
-    return () => {
-      window.removeEventListener('click', keepFocus)
-      window.removeEventListener('focus', keepFocus)
-    }
-  }, [])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const scannedCode = barcode.trim()
-    if (!scannedCode) return
-
-    setError(null)
-
-    try {
-      const product = await scannerApi.sendBarcode(scannedCode)
-      setScannedItems((prev) => [...prev, product])
-
-      // ── Tapo: Grün blinken ──
-      window.api?.tapo?.flashGreen().catch((e) =>
-        console.warn('Tapo flashGreen fehlgeschlagen:', e.message)
-      )
-    } catch (err) {
-      console.error('Scan-Fehler:', err.message)
-      setError(err.message)
-
-      // ── Tapo: Rot blinken ──
-      window.api?.tapo?.flashRed().catch((e) =>
-        console.warn('Tapo flashRed fehlgeschlagen:', e.message)
-      )
-
-      // platzhalter bis backend angebunden ist
-      setScannedItems((prev) => [
-        ...prev,
-        { barcode: scannedCode, name: `Unbekannt (${scannedCode})`, price: 0 }
-      ])
-    }
-
-    setBarcode('')
+  const products = {
+    Obst: [
+      { id: 1, name: 'Apfel' },
+      { id: 2, name: 'Banane' },
+      { id: 3, name: 'Kiwi' },
+      { id: 4, name: 'Traube' },
+      { id: 5, name: 'Pfirsich' },
+      { id: 6, name: 'Kirsche' }
+    ],
+    Gemüse: [
+      { id: 7, name: 'Karotte' },
+      { id: 8, name: 'Brokkoli' },
+      { id: 9, name: 'Tomate' }
+    ],
+    Backwaren: [
+      { id: 10, name: 'Croissant' },
+      { id: 11, name: 'Brötchen' },
+      { id: 12, name: 'Baguette' }
+    ]
   }
 
+  const [activeCategory, setActiveCategory] = useState('Obst')
+
+  const [counts, setCounts] = useState({})
+
+  const increase = (id) => {
+    setCounts((prev) => ({
+      ...prev,
+      [id]: (prev[id] || 0) + 1
+    }))
+  }
+
+  const decrease = (id) => {
+    setCounts((prev) => ({
+      ...prev,
+      [id]: Math.max((prev[id] || 0) - 1, 0)
+    }))
+  }
+
+  const resetLast = () => {
+    const keys = Object.keys(counts)
+    const last = keys[keys.length - 1]
+
+    if (!last) return
+
+    setCounts((prev) => ({
+      ...prev,
+      [last]: Math.max(prev[last] - 1, 0)
+    }))
+  }
+
+  // Scanned items für die nächsten Pages zusammenbauen
+  const getScannedItems = () => {
+    const items = []
+    for (const category of Object.values(products)) {
+      for (const product of category) {
+        const count = counts[product.id] || 0
+        if (count > 0) {
+          items.push({ ...product, quantity: count, price: 0 })
+        }
+      }
+    }
+    return items
+  }
+
+  const hasItems = Object.values(counts).some((c) => c > 0)
+
   return (
-    <div className="h-full flex flex-col">
-      <form onSubmit={handleSubmit}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          className={
-            DEV_MODE
-              ? 'w-full p-2 border-2 border-dashed border-orange-400 rounded-lg bg-orange-50 text-sm mb-3 outline-none focus:border-orange-500'
-              : 'absolute opacity-0 w-0 h-0'
-          }
-          placeholder={DEV_MODE ? '🔧 Barcode scannen oder manuell eintippen + Enter...' : ''}
-          aria-label="Barcode Scanner Eingabe"
-          autoFocus
-        />
-      </form>
+    <div className="flex flex-col h-full">
+      {/* Kategorien */}
 
-      {DEV_MODE && (
-        <div className="mb-3 p-2 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-800">
-          🔧 <strong>DEV-Modus aktiv</strong> — Input ist sichtbar für manuelle Eingabe. Setze{' '}
-          <code>DEV_MODE = false</code> in ScanPage.jsx um es unsichtbar zu machen.
-        </div>
-      )}
-
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
-        {scannedItems.length === 0 ? (
-          <div className="text-gray-400">
-            <p className="text-2xl font-bold mb-2">📦 Bitte Artikel scannen</p>
-            <p className="text-sm">
-              Der Scanner ist bereit. Halten Sie den Barcode vor den Scanner.
-            </p>
-          </div>
-        ) : (
-          <div className="w-full text-left">
-            <h2 className="text-lg font-bold mb-3 text-[#1e1e38]">Gescannte Artikel:</h2>
-            <ul className="space-y-2">
-              {scannedItems.map((item, i) => (
-                <li
-                  key={i}
-                  className="flex justify-between bg-gray-50 p-3 rounded-lg border border-gray-200"
-                >
-                  <span className="font-medium">{item.name || item.barcode}</span>
-                  {item.price != null && (
-                    <span className="font-semibold">
-                      {item.price.toFixed(2).replace('.', ',')}€
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {categories.map((cat) => (
+          <button
+            key={cat.name}
+            onClick={() => setActiveCategory(cat.name)}
+            className={`h-28 rounded-xl flex flex-col items-center justify-center text-xl font-bold border-4 transition
+              ${
+                activeCategory === cat.name
+                  ? 'bg-[#7C83FD] text-white border-[#6C72E8]' //true
+                  : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]' //false
+              }
+            `}
+          >
+            <img src={cat.img} className="h-10 mb-2 object-contain" />
+            {cat.name.toUpperCase()}
+          </button>
+        ))}
       </div>
 
-      {error && (
-        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          ⚠️ {error}
-        </div>
-      )}
+      {/* Produkte --> überarbeiten sobald Backend Anbindung steht*/}
 
-      <div className="mt-4 pt-3 border-t border-gray-200">
+      <div className="grid grid-cols-3 gap-6 flex-1">
+        {products[activeCategory].map((item) => (
+          <div
+            key={item.id}
+            className="bg-[#E9EAF1] rounded-xl p-4 flex flex-col items-center justify-between shadow-sm"
+          >
+            {/* Counter */}
+
+            <div className="flex items-center gap-4 text-xl font-bold">
+              <button
+                onClick={() => decrease(item.id)}
+                className="px-3 py-1 bg-white rounded shadow active:scale-95"
+              >
+                -
+              </button>
+
+              <span>{counts[item.id] || 0}</span>
+
+              <button
+                onClick={() => increase(item.id)}
+                className="px-3 py-1 bg-white rounded shadow active:scale-95"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Name */}
+
+            <span className="text-lg font-bold mt-2"> {item.name} </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Buttons */}
+
+      <div className="flex justify-between mt-6 gap-4">
         <button
-          onClick={() => navigate('/payment', { state: { items: scannedItems } })}
-          disabled={scannedItems.length === 0}
-          className="w-full py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={resetLast}
+          className="bg-[#A9ACC3] text-white px-8 py-3 rounded-lg text-lg font-bold hover:bg-[#8f93aa]"
+        >
+          letzten gescannten Artikel löschen
+        </button>
+        <button
+          onClick={() => navigate('/payment', { state: { items: getScannedItems() } })}
+          disabled={!hasItems}
+          className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
         >
           WEITER ZUR ZAHLUNG →
         </button>

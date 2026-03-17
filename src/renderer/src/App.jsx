@@ -17,10 +17,9 @@ export default function App() {
         <Route path="/" element={<CheckoutLayout />}>
           {/*  Default-Route */}
           <Route index element={<Navigate to="/scan" replace />} />
-          {/* Die drei Kassen-Pages */}
           <Route path="scan" element={<ScanPage />} />
-          <Route path="summary" element={<SummaryPage />} />
           <Route path="payment" element={<PaymentPage />} />
+          <Route path="summary" element={<SummaryPage />} />
         </Route>
       </Routes>
     </HashRouter>

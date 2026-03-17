@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
 
 export default function ScanPage() {
+  const navigate = useNavigate()
+
   const categories = [
     { name: 'Obst', img: apfel },
     { name: 'Gemüse', img: karotte },
@@ -63,6 +66,22 @@ export default function ScanPage() {
     }))
   }
 
+  // Scanned items für die nächsten Pages zusammenbauen
+  const getScannedItems = () => {
+    const items = []
+    for (const category of Object.values(products)) {
+      for (const product of category) {
+        const count = counts[product.id] || 0
+        if (count > 0) {
+          items.push({ ...product, quantity: count, price: 0 })
+        }
+      }
+    }
+    return items
+  }
+
+  const hasItems = Object.values(counts).some((c) => c > 0)
+
   return (
     <div className="flex flex-col h-full">
       {/* Kategorien */}
@@ -114,10 +133,6 @@ export default function ScanPage() {
               </button>
             </div>
 
-            {/* Image, Platzhaler für später wenn Backend angebunden ist & Image aus DB geladen wird */}
-
-            {/* <img src={item.img} alt={item.name} className="h-20 object-contain" /> */}
-
             {/* Name */}
 
             <span className="text-lg font-bold mt-2"> {item.name} </span>
@@ -125,14 +140,21 @@ export default function ScanPage() {
         ))}
       </div>
 
-      {/* letzten Artiekl löschen */}
+      {/* Buttons */}
 
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-between mt-6 gap-4">
         <button
           onClick={resetLast}
           className="bg-[#A9ACC3] text-white px-8 py-3 rounded-lg text-lg font-bold hover:bg-[#8f93aa]"
         >
           letzten gescannten Artikel löschen
+        </button>
+        <button
+          onClick={() => navigate('/payment', { state: { items: getScannedItems() } })}
+          disabled={!hasItems}
+          className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          WEITER ZUR ZAHLUNG →
         </button>
       </div>
     </div>

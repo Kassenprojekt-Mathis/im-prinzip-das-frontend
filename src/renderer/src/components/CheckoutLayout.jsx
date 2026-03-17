@@ -45,20 +45,20 @@ export default function CheckoutLayout() {
         >
           EINSCANNEN
         </div>
-        {/* Schritt 2: Zusammenfassung  */}
+        {/* Schritt 2: Zahlung */}
         <div
           className="flex-1 bg-[#D9DADD] flex items-center justify-center relative z-20 -ml-[2%]"
           style={{ clipPath: 'polygon(0% 0%, 95% 0%, 100% 50%, 95% 100%, 0% 100%, 5% 50%)' }}
         >
-          ZUSAMMENFASSUNG
+          ZAHLUNG
         </div>
 
-        {/* Schritt 3: Zahlung */}
+        {/* Schritt 3: Zusammenfassung */}
         <div
           className="flex-1 bg-[#D9DADD] flex items-center justify-center relative z-30 -ml-[2%]"
           style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 5% 50%)' }}
         >
-          ZAHLUNG
+          ZUSAMMENFASSUNG
         </div>
       </div>
 
@@ -66,13 +66,11 @@ export default function CheckoutLayout() {
       <main className="flex-1 grid grid-cols-3 gap-3 md:gap-4 lg:gap-6">
         {/* Linke Box: Dynamischer Inhalt (Pages) */}
         <section className="col-span-2 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col relative overflow-hidden shadow-sm">
-          {/* HIER RENDERT DER REACT ROUTER DIE JEWEILIGEN PAGES (ScanPage, PaymentPage etc.) */}
           <div className="p-4 flex-1 overflow-y-auto">
             <Outlet />
           </div>
         </section>
 
-        {/* Rechte Box: Statische Sidebar - Warenkorb & Summe */}
         <aside className="col-span-1 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col shadow-sm overflow-hidden">
           <Sidebar
             items={sampleCartData.items}

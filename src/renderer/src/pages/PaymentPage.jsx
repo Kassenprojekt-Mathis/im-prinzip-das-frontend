@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
+
 export default function PaymentPage() {
   const navigate = useNavigate()
   const [paymentComplete, setPaymentComplete] = useState(false)

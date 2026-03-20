@@ -4,7 +4,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import CheckoutLayout from './components/CheckoutLayout'
 
 // Pages
-import ScanPage from './pages/ScanPage'
+import ScanPageHome from './pages/ScanPageHome'
 import SummaryPage from './pages/SummaryPage'
 import PaymentPage from './pages/PaymentPage'
 
@@ -18,7 +18,7 @@ export default function App() {
           {/*  Default-Route */}
           <Route index element={<Navigate to="/scan" replace />} />
           {/* Die drei Kassen-Pages */}
-          <Route path="scan" element={<ScanPage />} />
+          <Route path="scan" element={<ScanPageHome />} />
           <Route path="summary" element={<SummaryPage />} />
           <Route path="payment" element={<PaymentPage />} />
         </Route>

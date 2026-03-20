@@ -1,6 +1,6 @@
 import ScannerIcon from '../assets/Icons/Scanner.png'
 import BarcodeIcon from '../assets/Icons/Barcode.png'
-export default function ScanPage() {
+export default function ScanPageHome() {
   return (
     <div className="relative flex flex-col h-full">
       <div className="flex-1 flex flex-col items-center justify-center p-8">

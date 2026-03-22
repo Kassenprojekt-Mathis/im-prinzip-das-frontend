@@ -18,6 +18,7 @@ export default function SummaryPage() {
     if (!inspectionCompleted && !inspectionSelected) {
       if (Math.random() < 0.8) {
         setInspectionSelected(true)
+        sessionStorage.setItem('inspectionActive', 'true')
         return
       }
     }
@@ -33,11 +34,7 @@ export default function SummaryPage() {
     setShowCustomerCard(false)
   }
   return (
-    <div className="relative flex flex-col h-full">
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Zusammenfassung</h1>
-        <p className="text-gray-600">Übersicht des Einkaufs</p>
-      </div>
+    <div className="relative flex flex-col h-full items-center justify-center">
       <div className="p-6">
         <div className="text-center mb-4">
           {inspectionCompleted ? (

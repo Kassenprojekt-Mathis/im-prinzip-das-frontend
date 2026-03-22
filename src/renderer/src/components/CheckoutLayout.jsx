@@ -4,6 +4,23 @@ import logoPrinzip from '../assets/Prinzip_Logo.png'
 import RandomInspectionVerificationModal from './RandomInspectionModal'
 import HelpModal from './HelpModal'
 
+import Sidebar from './Sidebar'
+
+const sampleCartData = {
+  items: [
+    { name: 'Bio-Kekse', price: 2.99 },
+    {
+      name: 'Milch',
+      price: 1.19,
+      discount: { label: '-30% Mindesthaltbarkeitsrabatt', amount: 0.36 }
+    },
+    { name: 'Kiwi', price: 0.5 }
+  ],
+  customerAccount: '1234',
+  total: 4.32,
+  savings: 0.36
+}
+
 export default function CheckoutLayout() {
   const location = useLocation()
   const navigate = useNavigate()

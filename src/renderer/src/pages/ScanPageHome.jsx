@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ScannerIcon from '../assets/Icons/Scanner.png'
 import BarcodeIcon from '../assets/Icons/Barcode.png'
 export default function ScanPageHome() {

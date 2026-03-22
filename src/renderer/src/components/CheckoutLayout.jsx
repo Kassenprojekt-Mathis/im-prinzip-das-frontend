@@ -30,7 +30,10 @@ export default function CheckoutLayout() {
 
   const isActive = (path) => location.pathname.includes(path)
 
+  const inspectionActive = sessionStorage.getItem('inspectionActive') === 'true'
+
   const handleRandomInspection = () => {
+    if (!inspectionActive) return
     setShowInspectionVerification(true)
   }
 
@@ -45,12 +48,14 @@ export default function CheckoutLayout() {
   const handleInspectionVerificationYes = () => {
     setShowInspectionVerification(false)
     sessionStorage.setItem('inspectionCompleted', 'true')
+    sessionStorage.removeItem('inspectionActive')
     navigate('/summary')
   }
 
   const handleInspectionVerificationNo = () => {
     setShowInspectionVerification(false)
     sessionStorage.setItem('inspectionCompleted', 'true')
+    sessionStorage.removeItem('inspectionActive')
     navigate('/summary')
   }
 
@@ -59,7 +64,12 @@ export default function CheckoutLayout() {
       <header className="flex justify-between items-center mb-4">
         <button
           onClick={handleRandomInspection}
-          className="h-16 w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:opacity-90 transition-opacity cursor-pointer"
+          disabled={!inspectionActive}
+          className={`h-16 w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md ${
+            inspectionActive
+              ? 'hover:opacity-90 transition-opacity cursor-pointer'
+              : 'cursor-default'
+          }`}
         >
           <img src={logoPrinzip} alt="Prinzip Logo" />
         </button>

@@ -132,9 +132,8 @@ export default function ScanPage() {
 
   useEffect(() => {
     const allItems = getScannedItems()
-    if (allItems.length > 0) {
-      sessionStorage.setItem('cartItems', JSON.stringify(allItems))
-    }
+    sessionStorage.setItem('cartItems', JSON.stringify(allItems))
+    window.dispatchEvent(new Event('cartUpdated'))
   }, [counts, scannedBarcodeItems])
 
   const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0

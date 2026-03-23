@@ -1,25 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import logoPrinzip from '../assets/Prinzip_Logo.png'
 import RandomInspectionVerificationModal from './RandomInspectionModal'
 import HelpModal from './HelpModal'
 import Sidebar from './Sidebar'
-
-const sampleCartData = {
-  items: [
-    { name: 'Bio-Kekse', price: 2.99 },
-    {
-      name: 'Milch',
-      price: 1.19,
-      discount: { label: '-30% Mindesthaltbarkeitsrabatt', amount: 0.36 }
-    },
-    { name: 'Kiwi', price: 0.5 }
-  ],
-  customerAccount: '1234',
-  total: 4.32,
-  savings: 0.36
-}
 
 export default function CheckoutLayout() {
   const location = useLocation()
@@ -28,6 +13,18 @@ export default function CheckoutLayout() {
 
   const [showInspectionVerification, setShowInspectionVerification] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [cartItems, setCartItems] = useState([])
+
+  const loadCart = useCallback(() => {
+    const stored = sessionStorage.getItem('cartItems')
+    setCartItems(stored ? JSON.parse(stored) : [])
+  }, [])
+
+  useEffect(() => {
+    loadCart()
+    window.addEventListener('cartUpdated', loadCart)
+    return () => window.removeEventListener('cartUpdated', loadCart)
+  }, [loadCart])
 
   const isActive = (path) => location.pathname.includes(path)
 
@@ -138,12 +135,7 @@ export default function CheckoutLayout() {
         </section>
 
         <aside className="col-span-1 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col shadow-sm overflow-hidden">
-          <div className="flex-1 p-4 overflow-y-auto"></div>
-
-          <div className="bg-[#EBECEF] border-t-[6px] border-[#D9DADD] p-6 flex justify-between items-end h-32">
-            <span className="text-2xl font-black tracking-tight">SUMME:</span>
-            <span className="text-3xl font-bold"> €</span>
-          </div>
+          <Sidebar items={cartItems} />
         </aside>
       </main>
     </div>

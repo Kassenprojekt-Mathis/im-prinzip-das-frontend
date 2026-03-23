@@ -130,7 +130,20 @@ export default function ScanPage() {
     return [...items, ...scannedBarcodeItems]
   }
 
+  useEffect(() => {
+    const allItems = getScannedItems()
+    if (allItems.length > 0) {
+      sessionStorage.setItem('cartItems', JSON.stringify(allItems))
+    }
+  }, [counts, scannedBarcodeItems])
+
   const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0
+
+  const handleNavigateToPayment = () => {
+    const items = getScannedItems()
+    sessionStorage.setItem('cartItems', JSON.stringify(items))
+    navigate('/payment', { state: { items } })
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -221,6 +234,14 @@ export default function ScanPage() {
               Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
             </p>
           </div>
+          {hasItems && (
+            <button
+              onClick={handleNavigateToPayment}
+              className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
+            >
+              WEITER ZUR ZAHLUNG →
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -269,7 +290,7 @@ export default function ScanPage() {
               letzten gescannten Artikel löschen
             </button>
             <button
-              onClick={() => navigate('/payment', { state: { items: getScannedItems() } })}
+              onClick={handleNavigateToPayment}
               disabled={!hasItems}
               className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >

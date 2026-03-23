@@ -21,17 +21,17 @@ export default function Sidebar({ items = [] }) {
     <>
       <div className="flex-1 p-4 overflow-y-auto text-[#1e1e38]">
         {grouped.length === 0 ? (
-          <p className="text-gray-400 text-sm italic">Noch keine Artikel gescannt.</p>
+          <p className="text-gray-400 text-base italic">Noch keine Artikel gescannt.</p>
         ) : (
           grouped.map((item, i) => (
             <div key={i} className="flex justify-between gap-2 mb-2">
               <div className="flex gap-2 truncate">
                 {item.quantity > 1 && (
-                  <span className="text-sm font-bold text-[#4338CA]">{item.quantity}×</span>
+                  <span className="text-lg font-bold text-[#4338CA]">{item.quantity}×</span>
                 )}
-                <span className="text-sm font-semibold truncate">{item.name}</span>
+                <span className="text-lg font-semibold truncate">{item.name}</span>
               </div>
-              <span className="text-sm font-semibold whitespace-nowrap">
+              <span className="text-lg font-semibold whitespace-nowrap">
                 {fmt((item.price || 0) * (item.quantity || 1))} €
               </span>
             </div>

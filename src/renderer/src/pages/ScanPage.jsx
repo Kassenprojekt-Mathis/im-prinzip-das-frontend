@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
@@ -11,8 +11,19 @@ import BarcodeIcon from '../assets/Icons/Barcode.png'
 export default function ScanPage() {
   const navigate = useNavigate()
   const devMode = useDevMode()
+  const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
+
+  const focusBarcodeInput = useCallback(() => {
+    if (devMode && barcodeRef.current) {
+      barcodeRef.current.focus()
+    }
+  }, [devMode])
+
+  useEffect(() => {
+    focusBarcodeInput()
+  }, [devMode, focusBarcodeInput])
 
   const categories = [
     { name: 'Obst', img: apfel },
@@ -109,10 +120,12 @@ export default function ScanPage() {
         <div className="mb-4 flex flex-col gap-2">
           <div className="flex gap-2">
             <input
+              ref={barcodeRef}
               type="text"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
+              onBlur={() => setTimeout(focusBarcodeInput, 50)}
               placeholder="Barcode eingeben..."
               className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]"
             />

@@ -139,10 +139,10 @@ export default function ScanPage() {
 
   const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0
 
-  const handleNavigateToPayment = () => {
+  const handleNavigateToSummary = () => {
     const items = getScannedItems()
     sessionStorage.setItem('cartItems', JSON.stringify(items))
-    navigate('/payment', { state: { items } })
+    navigate('/summary')
   }
 
   return (
@@ -236,10 +236,10 @@ export default function ScanPage() {
           </div>
           {hasItems && (
             <button
-              onClick={handleNavigateToPayment}
+              onClick={handleNavigateToSummary}
               className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
             >
-              WEITER ZUR ZAHLUNG →
+              WEITER ZUR ZUSAMMENFASSUNG →
             </button>
           )}
         </div>
@@ -290,11 +290,11 @@ export default function ScanPage() {
               letzten gescannten Artikel löschen
             </button>
             <button
-              onClick={handleNavigateToPayment}
+              onClick={handleNavigateToSummary}
               disabled={!hasItems}
               className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              WEITER ZUR ZAHLUNG →
+              WEITER ZUR ZUSAMMENFASSUNG →
             </button>
           </div>
         </>

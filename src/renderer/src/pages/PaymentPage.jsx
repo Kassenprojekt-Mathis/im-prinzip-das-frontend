@@ -10,6 +10,7 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const devMode = useDevMode()
   const [paymentComplete, setPaymentComplete] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
@@ -41,7 +42,7 @@ export default function PaymentPage() {
         storeName: 'Im Prinzip',
         items: [],
         total: 0,
-        paymentMethod: 'Bar',
+        paymentMethod,
         footer: 'Vielen Dank fuer Ihren Einkauf!'
       })
       setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
@@ -70,9 +71,11 @@ export default function PaymentPage() {
   }
 
   const handleCardPayment = () => {
+    setPaymentMethod('Kartenzahlung')
     setPaymentComplete(true)
   }
   const handleCashPayment = () => {
+    setPaymentMethod('Bar')
     setPaymentComplete(true)
   }
   const handleNextPurchase = () => {

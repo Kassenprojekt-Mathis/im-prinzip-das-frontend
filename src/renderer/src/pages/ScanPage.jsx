@@ -14,6 +14,7 @@ export default function ScanPage() {
   const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
+  const [scannedBarcodeItems, setScannedBarcodeItems] = useState([])
 
   const focusBarcodeInput = useCallback(() => {
     if (barcodeRef.current) {
@@ -58,13 +59,28 @@ export default function ScanPage() {
 
   const handleBarcodeScan = async () => {
     if (!barcodeInput.trim()) return
+    const barcode = barcodeInput.trim()
     setScanStatus(null)
     try {
-      await scannerApi.sendBarcode(barcodeInput.trim())
-      setScanStatus({ type: 'success', message: `Barcode ${barcodeInput} erfolgreich gescannt` })
+      const product = await scannerApi.sendBarcode(barcode)
+      const item = {
+        barcode,
+        name: product.name || `Unbekannt (${barcode})`,
+        price: product.price || 0,
+        quantity: 1
+      }
+      setScannedBarcodeItems((prev) => [...prev, item])
+      setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
-    } catch (err) {
-      setScanStatus({ type: 'error', message: err.message })
+    } catch {
+      const item = {
+        barcode,
+        name: `Unbekannt (${barcode})`,
+        price: 0,
+        quantity: 1
+      }
+      setScannedBarcodeItems((prev) => [...prev, item])
+      setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
       window.api?.tapo?.flashRed()
     }
     setBarcodeInput('')
@@ -111,10 +127,10 @@ export default function ScanPage() {
         }
       }
     }
-    return items
+    return [...items, ...scannedBarcodeItems]
   }
 
-  const hasItems = Object.values(counts).some((c) => c > 0)
+  const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0
 
   return (
     <div className="flex flex-col h-full">

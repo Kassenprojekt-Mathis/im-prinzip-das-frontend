@@ -61,12 +61,26 @@ export default function ScanPage() {
     if (!barcodeInput.trim()) return
     const barcode = barcodeInput.trim()
     setScanStatus(null)
+
+    // Kundenkarte scannen
+    if (sessionStorage.getItem('pendingCustomerCard') === 'true') {
+      sessionStorage.removeItem('pendingCustomerCard')
+      sessionStorage.setItem('customerCard', barcode)
+      window.dispatchEvent(new Event('cartUpdated'))
+      setScanStatus({ type: 'success', message: `Kundenkarte ${barcode} erfasst` })
+      window.api?.tapo?.flashGreen()
+      setBarcodeInput('')
+      return
+    }
+
+    // Produkt scannen
     try {
       const product = await scannerApi.sendBarcode(barcode)
       const item = {
         barcode,
         name: product.name || `Unbekannt (${barcode})`,
         price: product.price || 0,
+        discount: product.discount || null,
         quantity: 1
       }
       setScannedBarcodeItems((prev) => [...prev, item])

@@ -26,6 +26,7 @@ export default function SummaryPage() {
   }
   const handleCustomerCardYes = () => {
     sessionStorage.setItem('customerCardAsked', 'true')
+    sessionStorage.setItem('pendingCustomerCard', 'true')
     setShowCustomerCard(false)
     navigate('/scan')
   }

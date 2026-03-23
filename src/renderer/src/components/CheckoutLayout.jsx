@@ -15,9 +15,14 @@ export default function CheckoutLayout() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [cartItems, setCartItems] = useState([])
 
+  const [customerCard, setCustomerCard] = useState(
+    sessionStorage.getItem('customerCard') || ''
+  )
+
   const loadCart = useCallback(() => {
     const stored = sessionStorage.getItem('cartItems')
     setCartItems(stored ? JSON.parse(stored) : [])
+    setCustomerCard(sessionStorage.getItem('customerCard') || '')
   }, [])
 
   useEffect(() => {
@@ -135,7 +140,7 @@ export default function CheckoutLayout() {
         </section>
 
         <aside className="col-span-1 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col shadow-sm overflow-hidden">
-          <Sidebar items={cartItems} />
+          <Sidebar items={cartItems} customerCard={customerCard} />
         </aside>
       </main>
     </div>

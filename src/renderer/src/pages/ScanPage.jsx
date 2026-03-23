@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDevMode } from '../context/DevModeContext'
+import { scannerApi } from '../api/scannerAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -8,6 +10,9 @@ import BarcodeIcon from '../assets/Icons/Barcode.png'
 
 export default function ScanPage() {
   const navigate = useNavigate()
+  const devMode = useDevMode()
+  const [barcodeInput, setBarcodeInput] = useState('')
+  const [scanStatus, setScanStatus] = useState(null)
 
   const categories = [
     { name: 'Obst', img: apfel },
@@ -36,6 +41,20 @@ export default function ScanPage() {
       { id: 11, name: 'Brötchen' },
       { id: 12, name: 'Baguette' }
     ]
+  }
+
+  const handleBarcodeScan = async () => {
+    if (!barcodeInput.trim()) return
+    setScanStatus(null)
+    try {
+      await scannerApi.sendBarcode(barcodeInput.trim())
+      setScanStatus({ type: 'success', message: `Barcode ${barcodeInput} erfolgreich gescannt` })
+      window.api?.tapo?.flashGreen()
+    } catch (err) {
+      setScanStatus({ type: 'error', message: err.message })
+      window.api?.tapo?.flashRed()
+    }
+    setBarcodeInput('')
   }
 
   const [activeCategory, setActiveCategory] = useState(null)
@@ -86,7 +105,49 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Kategorien */}
+      {devMode && (
+        <div className="mb-4 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
+              placeholder="Barcode eingeben..."
+              className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]"
+            />
+            <button
+              onClick={handleBarcodeScan}
+              className="px-6 py-2 text-sm font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
+            >
+              Scannen
+            </button>
+            <button
+              onClick={() => window.api?.tapo?.flashGreen()}
+              className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-transform"
+            >
+              🟢 Lampe
+            </button>
+            <button
+              onClick={() => window.api?.tapo?.flashRed()}
+              className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-transform"
+            >
+              🔴 Lampe
+            </button>
+          </div>
+          {scanStatus && (
+            <div
+              className={`p-2 rounded-lg text-sm ${
+                scanStatus.type === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-700'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}
+            >
+              {scanStatus.message}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {categories.map((cat) => (

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { printerApi } from '../api/printerAPI'
 import CardIcon from '../assets/Icons/Card.png'
@@ -8,7 +8,27 @@ import PersonIcon from '../assets/Icons/Person.png'
 
 export default function PaymentPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const devMode = useDevMode()
+  const scannedItems = location.state?.items || []
+
+  const items = useMemo(() => {
+    return scannedItems.reduce((acc, item) => {
+      const key = item.barcode || item.name
+      const existing = acc.find((i) => (i.barcode || i.name) === key)
+      if (existing) {
+        existing.quantity = (existing.quantity || 1) + 1
+      } else {
+        acc.push({ ...item, quantity: item.quantity || 1 })
+      }
+      return acc
+    }, [])
+  }, [scannedItems])
+
+  const total = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
+  }, [items])
+
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('')
   const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
@@ -40,8 +60,8 @@ export default function PaymentPage() {
     try {
       await printerApi.printReceipt({
         storeName: 'Im Prinzip',
-        items: [],
-        total: 0,
+        items,
+        total,
         paymentMethod,
         footer: 'Vielen Dank fuer Ihren Einkauf!'
       })

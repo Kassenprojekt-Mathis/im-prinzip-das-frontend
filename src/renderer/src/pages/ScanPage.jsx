@@ -23,6 +23,8 @@ export default function ScanPage() {
 
   useEffect(() => {
     focusBarcodeInput()
+    const timer = setTimeout(focusBarcodeInput, 100)
+    return () => clearTimeout(timer)
   }, [devMode, focusBarcodeInput])
 
   const categories = [
@@ -121,6 +123,7 @@ export default function ScanPage() {
           <div className="flex gap-2">
             <input
               ref={barcodeRef}
+              autoFocus
               type="text"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}

@@ -16,16 +16,16 @@ export default function ScanPage() {
   const [scanStatus, setScanStatus] = useState(null)
 
   const focusBarcodeInput = useCallback(() => {
-    if (devMode && barcodeRef.current) {
+    if (barcodeRef.current) {
       barcodeRef.current.focus()
     }
-  }, [devMode])
+  }, [])
 
   useEffect(() => {
     focusBarcodeInput()
     const timer = setTimeout(focusBarcodeInput, 100)
     return () => clearTimeout(timer)
-  }, [devMode, focusBarcodeInput])
+  }, [focusBarcodeInput])
 
   const categories = [
     { name: 'Obst', img: apfel },
@@ -118,20 +118,24 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <input
+        ref={barcodeRef}
+        autoFocus
+        type="text"
+        value={barcodeInput}
+        onChange={(e) => setBarcodeInput(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
+        onBlur={() => setTimeout(focusBarcodeInput, 50)}
+        placeholder="Barcode eingeben..."
+        className={devMode
+          ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
+          : 'absolute opacity-0 pointer-events-none'
+        }
+      />
+
       {devMode && (
         <div className="mb-4 flex flex-col gap-2">
           <div className="flex gap-2">
-            <input
-              ref={barcodeRef}
-              autoFocus
-              type="text"
-              value={barcodeInput}
-              onChange={(e) => setBarcodeInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
-              onBlur={() => setTimeout(focusBarcodeInput, 50)}
-              placeholder="Barcode eingeben..."
-              className="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]"
-            />
             <button
               onClick={handleBarcodeScan}
               className="px-6 py-2 text-sm font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"

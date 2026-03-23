@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useDevMode } from '../context/DevModeContext'
 import logoPrinzip from '../assets/Prinzip_Logo.png'
 import RandomInspectionVerificationModal from './RandomInspectionModal'
 import HelpModal from './HelpModal'
-
 import Sidebar from './Sidebar'
 
 const sampleCartData = {
@@ -24,6 +24,7 @@ const sampleCartData = {
 export default function CheckoutLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const devMode = useDevMode()
 
   const [showInspectionVerification, setShowInspectionVerification] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
@@ -60,7 +61,12 @@ export default function CheckoutLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] p-6 flex flex-col font-sans text-[#1e1e38]">
+    <div className="min-h-screen bg-[#F0F4F8] p-6 flex flex-col font-sans text-[#1e1e38] relative">
+      {devMode && (
+        <div className="fixed top-2 right-2 z-50 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+          DEV MODE
+        </div>
+      )}
       <header className="flex justify-between items-center mb-4">
         <button
           onClick={handleRandomInspection}

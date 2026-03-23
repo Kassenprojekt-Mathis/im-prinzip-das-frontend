@@ -16,6 +16,14 @@ import { exec } from 'child_process'
 
 let currentPrinterName = 'GEZHI_micro_printer'
 
+function sanitize(text) {
+  return text
+    .replace(/ä/g, 'ae').replace(/Ä/g, 'Ae')
+    .replace(/ö/g, 'oe').replace(/Ö/g, 'Oe')
+    .replace(/ü/g, 'ue').replace(/Ü/g, 'Ue')
+    .replace(/ß/g, 'ss')
+}
+
 function getAvailablePrinters() {
   return new Promise((resolve) => {
     const command =
@@ -124,7 +132,8 @@ function printReceipt(receiptData) {
       if (receiptData.items && receiptData.items.length > 0) {
         for (const item of receiptData.items) {
           const qty = item.quantity || 1
-          const name = qty > 1 ? `${qty}x ${item.name}` : item.name
+          const rawName = qty > 1 ? `${qty}x ${item.name}` : item.name
+          const name = sanitize(rawName)
           const itemTotal = (item.price || 0) * qty
           const priceStr = itemTotal.toFixed(2) + ' EUR'
 

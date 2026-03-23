@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDevMode } from '../context/DevModeContext'
+import { scannerApi } from '../api/scannerAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -8,6 +10,23 @@ import BarcodeIcon from '../assets/Icons/Barcode.png'
 
 export default function ScanPage() {
   const navigate = useNavigate()
+  const devMode = useDevMode()
+  const barcodeRef = useRef(null)
+  const [barcodeInput, setBarcodeInput] = useState('')
+  const [scanStatus, setScanStatus] = useState(null)
+  const [scannedBarcodeItems, setScannedBarcodeItems] = useState([])
+
+  const focusBarcodeInput = useCallback(() => {
+    if (barcodeRef.current) {
+      barcodeRef.current.focus()
+    }
+  }, [])
+
+  useEffect(() => {
+    focusBarcodeInput()
+    const timer = setTimeout(focusBarcodeInput, 100)
+    return () => clearTimeout(timer)
+  }, [focusBarcodeInput])
 
   const categories = [
     { name: 'Obst', img: apfel },
@@ -36,6 +55,35 @@ export default function ScanPage() {
       { id: 11, name: 'Brötchen' },
       { id: 12, name: 'Baguette' }
     ]
+  }
+
+  const handleBarcodeScan = async () => {
+    if (!barcodeInput.trim()) return
+    const barcode = barcodeInput.trim()
+    setScanStatus(null)
+    try {
+      const product = await scannerApi.sendBarcode(barcode)
+      const item = {
+        barcode,
+        name: product.name || `Unbekannt (${barcode})`,
+        price: product.price || 0,
+        quantity: 1
+      }
+      setScannedBarcodeItems((prev) => [...prev, item])
+      setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
+      window.api?.tapo?.flashGreen()
+    } catch {
+      const item = {
+        barcode,
+        name: `Unbekannt (${barcode})`,
+        price: 0,
+        quantity: 1
+      }
+      setScannedBarcodeItems((prev) => [...prev, item])
+      setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
+      window.api?.tapo?.flashRed()
+    }
+    setBarcodeInput('')
   }
 
   const [activeCategory, setActiveCategory] = useState(null)
@@ -79,14 +127,76 @@ export default function ScanPage() {
         }
       }
     }
-    return items
+    return [...items, ...scannedBarcodeItems]
   }
 
-  const hasItems = Object.values(counts).some((c) => c > 0)
+  useEffect(() => {
+    const allItems = getScannedItems()
+    if (allItems.length > 0) {
+      sessionStorage.setItem('cartItems', JSON.stringify(allItems))
+    }
+  }, [counts, scannedBarcodeItems])
+
+  const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0
+
+  const handleNavigateToSummary = () => {
+    const items = getScannedItems()
+    sessionStorage.setItem('cartItems', JSON.stringify(items))
+    navigate('/summary')
+  }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Kategorien */}
+      <input
+        ref={barcodeRef}
+        autoFocus
+        type="text"
+        value={barcodeInput}
+        onChange={(e) => setBarcodeInput(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
+        onBlur={() => setTimeout(focusBarcodeInput, 50)}
+        placeholder="Barcode eingeben..."
+        className={devMode
+          ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
+          : 'absolute opacity-0 pointer-events-none'
+        }
+      />
+
+      {devMode && (
+        <div className="mb-4 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={handleBarcodeScan}
+              className="px-6 py-2 text-sm font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
+            >
+              Scannen
+            </button>
+            <button
+              onClick={() => window.api?.tapo?.flashGreen()}
+              className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-transform"
+            >
+              🟢 Lampe
+            </button>
+            <button
+              onClick={() => window.api?.tapo?.flashRed()}
+              className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-transform"
+            >
+              🔴 Lampe
+            </button>
+          </div>
+          {scanStatus && (
+            <div
+              className={`p-2 rounded-lg text-sm ${
+                scanStatus.type === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-700'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}
+            >
+              {scanStatus.message}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         {categories.map((cat) => (
@@ -124,6 +234,14 @@ export default function ScanPage() {
               Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
             </p>
           </div>
+          {hasItems && (
+            <button
+              onClick={handleNavigateToSummary}
+              className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
+            >
+              WEITER ZUR ZUSAMMENFASSUNG →
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -172,11 +290,11 @@ export default function ScanPage() {
               letzten gescannten Artikel löschen
             </button>
             <button
-              onClick={() => navigate('/payment', { state: { items: getScannedItems() } })}
+              onClick={handleNavigateToSummary}
               disabled={!hasItems}
               className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              WEITER ZUR ZAHLUNG →
+              WEITER ZUR ZUSAMMENFASSUNG →
             </button>
           </div>
         </>

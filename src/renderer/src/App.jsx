@@ -1,17 +1,14 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-
-// Layout
+import { DevModeProvider } from './context/DevModeContext'
 import CheckoutLayout from './components/CheckoutLayout'
-
-// Pages
 import ScanPageHome from './pages/ScanPageHome'
 import ScanPage from './pages/ScanPage'
 import SummaryPage from './pages/SummaryPage'
 import PaymentPage from './pages/PaymentPage'
 
-//Routen
 export default function App() {
   return (
+    <DevModeProvider>
     <HashRouter>
       <Routes>
         {/* Layout, dass sich nicht verändert */}
@@ -26,5 +23,6 @@ export default function App() {
         </Route>
       </Routes>
     </HashRouter>
+    </DevModeProvider>
   )
 }

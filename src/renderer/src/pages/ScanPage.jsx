@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
 import apfel from '../../../../resources/apfel.png'
@@ -10,6 +10,7 @@ import BarcodeIcon from '../assets/Icons/Barcode.png'
 
 export default function ScanPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const devMode = useDevMode()
   const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
@@ -86,7 +87,7 @@ export default function ScanPage() {
     setBarcodeInput('')
   }
 
-  const [activeCategory, setActiveCategory] = useState(null)
+  const [activeCategory, setActiveCategory] = useState(location.state?.category || null)
 
   const [counts, setCounts] = useState({})
 
@@ -156,9 +157,10 @@ export default function ScanPage() {
         onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
         onBlur={() => setTimeout(focusBarcodeInput, 50)}
         placeholder="Barcode eingeben..."
-        className={devMode
-          ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
-          : 'absolute opacity-0 pointer-events-none'
+        className={
+          devMode
+            ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
+            : 'absolute opacity-0 pointer-events-none'
         }
       />
 
@@ -237,9 +239,10 @@ export default function ScanPage() {
           {hasItems && (
             <button
               onClick={handleNavigateToSummary}
-              className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
+              className="mt-6 px-8 py-3 text-white font-semibold rounded-lg transition-colors"
+              style={{ backgroundColor: '#948BB8' }}
             >
-              WEITER ZUR ZUSAMMENFASSUNG →
+              WEITER →
             </button>
           )}
         </div>
@@ -280,8 +283,6 @@ export default function ScanPage() {
             ))}
           </div>
 
-          {/* Buttons */}
-
           <div className="flex justify-between mt-6 gap-4">
             <button
               onClick={resetLast}
@@ -292,9 +293,10 @@ export default function ScanPage() {
             <button
               onClick={handleNavigateToSummary}
               disabled={!hasItems}
-              className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#948BB8' }}
             >
-              WEITER ZUR ZUSAMMENFASSUNG →
+              WEITER →
             </button>
           </div>
         </>

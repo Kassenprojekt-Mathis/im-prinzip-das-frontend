@@ -4,6 +4,9 @@ import CustomerCardModal from '../components/CustomerCardModal'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
 import HandsIcon from '../assets/Icons/Hands.png'
 import WarningIcon from '../assets/Icons/Warning.png'
+import apfel from '../../../../resources/apfel.png'
+import karotte from '../../../../resources/karotte.png'
+import croissant from '../../../../resources/croissant.png'
 export default function SummaryPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -14,6 +17,12 @@ export default function SummaryPage() {
     !fromPayment && !customerCardAsked && !inspectionCompleted
   )
   const [inspectionSelected, setInspectionSelected] = useState(false)
+
+  const categories = [
+    { name: 'Obst', img: apfel },
+    { name: 'Gemüse', img: karotte },
+    { name: 'Backwaren', img: croissant }
+  ]
   const handleContinueToPayment = () => {
     if (!inspectionCompleted && !inspectionSelected) {
       if (Math.random() < 0.8) {
@@ -34,26 +43,47 @@ export default function SummaryPage() {
     setShowCustomerCard(false)
   }
   return (
-    <div className="relative flex flex-col h-full items-center justify-center">
-      <div className="p-6">
-        <div className="text-center mb-4">
+    <div className="relative flex flex-col h-full">
+      {/* Kategorien */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {categories.map((cat) => (
+          <button
+            key={cat.name}
+            onClick={() =>
+              !inspectionSelected && navigate('/scan', { state: { category: cat.name } })
+            }
+            disabled={inspectionSelected}
+            className={`h-28 rounded-xl flex flex-col items-center justify-center text-xl font-bold border-4 transition ${
+              inspectionSelected
+                ? 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] opacity-50 cursor-not-allowed'
+                : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]'
+            }`}
+          >
+            <img src={cat.img} className="h-10 mb-2 object-contain" />
+            {cat.name.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="text-center mt-6 gap-4">
           {inspectionCompleted ? (
             <>
               <div className="flex justify-center mb-3">
                 <img src={HandsIcon} alt="Hände" className="w-40 h-40 object-contain" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Kontrolle vorbei!</h2>
-              <p className="text-sm text-gray-600">Sie können nun zur Zahlung fortfahren.</p>
+              <h2 className="text-4xl font-bold text-gray-800 mb-3">Kontrolle vorbei!</h2>
+              <p className="text-xl text-gray-700">Sie können nun zur Zahlung fortfahren.</p>
             </>
           ) : inspectionSelected ? (
             <>
               <div className="flex justify-center mb-3">
                 <img src={WarningIcon} alt="Warnung" className="w-32 h-32 object-contain" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
+              <h2 className="text-4xl font-bold text-gray-800 mb-3">
                 Sie wurden für eine Zufallskontrolle ausgewählt
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-xl text-gray-700">
                 Ein Mitarbeiter ist auf dem Weg, um Ihren Einkauf zu überprüfen. <br />
                 Bitte warten Sie einen Moment.
               </p>
@@ -63,32 +93,24 @@ export default function SummaryPage() {
               <div className="flex justify-center mb-3">
                 <img src={QuestionmarkIcon} alt="Frage" className="w-32 h-32 object-contain" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Alles eingescannt?</h2>
-              <p className="text-sm text-gray-600">Es kann eine Zufallskontrolle stattfinden!</p>
+              <h2 className="text-4xl font-bold text-gray-800 mb-3">Alles eingescannt?</h2>
+              <p className="text-xl text-gray-700">Es kann eine Zufallskontrolle stattfinden!</p>
             </>
           )}
         </div>
-        {(!inspectionSelected || inspectionCompleted) && (
-          <div className="flex gap-4 justify-center">
-            {!inspectionCompleted && (
-              <button
-                onClick={() => navigate('/scan')}
-                className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors"
-                style={{ backgroundColor: '#E1E1F2' }}
-              >
-                Zurück zum Einscannen
-              </button>
-            )}
-            <button
-              onClick={handleContinueToPayment}
-              className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
-              style={{ backgroundColor: '#948BB8' }}
-            >
-              Weiter zur Zahlung
-            </button>
-          </div>
-        )}
       </div>
+
+      {(!inspectionSelected || inspectionCompleted) && (
+        <div className="flex justify-end mt-6 gap-4">
+          <button
+            onClick={handleContinueToPayment}
+            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#948BB8' }}
+          >
+            WEITER →
+          </button>
+        </div>
+      )}
       <CustomerCardModal
         isOpen={showCustomerCard}
         onYes={handleCustomerCardYes}

@@ -15,6 +15,7 @@ export default function ScanPage() {
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
   const [scannedBarcodeItems, setScannedBarcodeItems] = useState([])
+  const [actionHistory, setActionHistory] = useState([])
 
   const focusBarcodeInput = useCallback(() => {
     if (barcodeRef.current) {
@@ -70,6 +71,7 @@ export default function ScanPage() {
         quantity: 1
       }
       setScannedBarcodeItems((prev) => [...prev, item])
+      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
     } catch {
@@ -80,6 +82,7 @@ export default function ScanPage() {
         quantity: 1
       }
       setScannedBarcodeItems((prev) => [...prev, item])
+      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
       window.api?.tapo?.flashRed()
     }
@@ -95,6 +98,7 @@ export default function ScanPage() {
       ...prev,
       [id]: (prev[id] || 0) + 1
     }))
+    setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
 
   const decrease = (id) => {
@@ -105,15 +109,20 @@ export default function ScanPage() {
   }
 
   const resetLast = () => {
-    const keys = Object.keys(counts)
-    const last = keys[keys.length - 1]
+    if (actionHistory.length === 0) return
 
-    if (!last) return
+    const lastAction = actionHistory[actionHistory.length - 1]
 
-    setCounts((prev) => ({
-      ...prev,
-      [last]: Math.max(prev[last] - 1, 0)
-    }))
+    if (lastAction.type === 'category') {
+      setCounts((prev) => ({
+        ...prev,
+        [lastAction.productId]: Math.max((prev[lastAction.productId] || 0) - 1, 0)
+      }))
+    } else if (lastAction.type === 'barcode') {
+      setScannedBarcodeItems((prev) => prev.slice(0, -1))
+    }
+
+    setActionHistory((prev) => prev.slice(0, -1))
   }
 
   // Scanned items für die nächsten Pages zusammenbauen
@@ -234,14 +243,6 @@ export default function ScanPage() {
               Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
             </p>
           </div>
-          {hasItems && (
-            <button
-              onClick={handleNavigateToSummary}
-              className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
-            >
-              WEITER ZUR ZUSAMMENFASSUNG →
-            </button>
-          )}
         </div>
       ) : (
         <>
@@ -280,24 +281,27 @@ export default function ScanPage() {
             ))}
           </div>
 
-          {/* Buttons */}
-
-          <div className="flex justify-between mt-6 gap-4">
-            <button
-              onClick={resetLast}
-              className="bg-[#A9ACC3] text-white px-8 py-3 rounded-lg text-lg font-bold hover:bg-[#8f93aa]"
-            >
-              letzten gescannten Artikel löschen
-            </button>
-            <button
-              onClick={handleNavigateToSummary}
-              disabled={!hasItems}
-              className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              WEITER ZUR ZUSAMMENFASSUNG →
-            </button>
-          </div>
         </>
+      )}
+
+      {/* Buttons – sichtbar sobald Items vorhanden, unabhängig von Kategorie */}
+      {hasItems && (
+        <div className="flex justify-between mt-6 gap-4">
+          <button
+            onClick={resetLast}
+            className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#E1E1F2' }}
+          >
+            Letzten Artikel löschen
+          </button>
+          <button
+            onClick={handleNavigateToSummary}
+            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#948BB8' }}
+          >
+            Weiter zur Zusammenfassung →
+          </button>
+        </div>
       )}
     </div>
   )

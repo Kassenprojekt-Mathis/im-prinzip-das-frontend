@@ -22,6 +22,9 @@ export default function ScanPage() {
     return stored ? JSON.parse(stored) : []
   })
 
+  // Action-History für Undo-Funktionalität
+  const [actionHistory, setActionHistory] = useState([])
+
   // Counts für die Produkt-Grid-Anzeige ableiten
   const counts = cartItemsList.reduce((acc, item) => {
     if (item.type === 'manual') {
@@ -98,6 +101,7 @@ export default function ScanPage() {
         discount: product.discount || null
       }
       setCartItemsList((prev) => [...prev, item])
+      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
     } catch {
@@ -108,6 +112,7 @@ export default function ScanPage() {
         price: 0
       }
       setCartItemsList((prev) => [...prev, item])
+      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
       window.api?.tapo?.flashRed()
     }
@@ -122,6 +127,7 @@ export default function ScanPage() {
       .find((p) => p.id === id)
     if (!product) return
     setCartItemsList((prev) => [...prev, { type: 'manual', id: product.id, name: product.name, price: 0 }])
+    setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
 
   const decrease = (id) => {
@@ -134,10 +140,16 @@ export default function ScanPage() {
   }
 
   const resetLast = () => {
+    if (actionHistory.length === 0) return
+
+    // Letztes Item aus cartItemsList entfernen
     setCartItemsList((prev) => {
       if (prev.length === 0) return prev
       return prev.slice(0, -1)
     })
+
+    // actionHistory aktualisieren
+    setActionHistory((prev) => prev.slice(0, -1))
   }
 
   // Hilfsfunktion: findLastIndex (für ältere JS-Umgebungen)
@@ -268,14 +280,6 @@ export default function ScanPage() {
               Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
             </p>
           </div>
-          {hasItems && (
-            <button
-              onClick={handleNavigateToSummary}
-              className="mt-6 px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform"
-            >
-              WEITER ZUR ZUSAMMENFASSUNG →
-            </button>
-          )}
         </div>
       ) : (
         <>
@@ -314,24 +318,27 @@ export default function ScanPage() {
             ))}
           </div>
 
-          {/* Buttons */}
-
-          <div className="flex justify-between mt-6 gap-4">
-            <button
-              onClick={resetLast}
-              className="bg-[#A9ACC3] text-white px-8 py-3 rounded-lg text-lg font-bold hover:bg-[#8f93aa]"
-            >
-              letzten gescannten Artikel löschen
-            </button>
-            <button
-              onClick={handleNavigateToSummary}
-              disabled={!hasItems}
-              className="px-8 py-3 text-lg font-bold bg-[#1E1B4B] text-white rounded-lg hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              WEITER ZUR ZUSAMMENFASSUNG →
-            </button>
-          </div>
         </>
+      )}
+
+      {/* Buttons – sichtbar sobald Items vorhanden, unabhängig von Kategorie */}
+      {hasItems && (
+        <div className="flex justify-between mt-6 gap-4">
+          <button
+            onClick={resetLast}
+            className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#E1E1F2' }}
+          >
+            Letzten Artikel löschen
+          </button>
+          <button
+            onClick={handleNavigateToSummary}
+            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
+            style={{ backgroundColor: '#948BB8' }}
+          >
+            Weiter zur Zusammenfassung →
+          </button>
+        </div>
       )}
     </div>
   )

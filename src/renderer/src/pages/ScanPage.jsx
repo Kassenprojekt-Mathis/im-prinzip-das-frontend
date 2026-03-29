@@ -14,7 +14,10 @@ export default function ScanPage() {
   const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
-  const [scannedBarcodeItems, setScannedBarcodeItems] = useState([])
+  const [scannedBarcodeItems, setScannedBarcodeItems] = useState(() => {
+    const stored = sessionStorage.getItem('scannedBarcodeItems')
+    return stored ? JSON.parse(stored) : []
+  })
 
   const focusBarcodeInput = useCallback(() => {
     if (barcodeRef.current) {
@@ -102,7 +105,10 @@ export default function ScanPage() {
 
   const [activeCategory, setActiveCategory] = useState(null)
 
-  const [counts, setCounts] = useState({})
+  const [counts, setCounts] = useState(() => {
+    const stored = sessionStorage.getItem('scanCounts')
+    return stored ? JSON.parse(stored) : {}
+  })
 
   const increase = (id) => {
     setCounts((prev) => ({
@@ -147,6 +153,8 @@ export default function ScanPage() {
   useEffect(() => {
     const allItems = getScannedItems()
     sessionStorage.setItem('cartItems', JSON.stringify(allItems))
+    sessionStorage.setItem('scanCounts', JSON.stringify(counts))
+    sessionStorage.setItem('scannedBarcodeItems', JSON.stringify(scannedBarcodeItems))
     window.dispatchEvent(new Event('cartUpdated'))
   }, [counts, scannedBarcodeItems])
 

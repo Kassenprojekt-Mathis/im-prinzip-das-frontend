@@ -140,7 +140,7 @@ export default function ScanPage() {
   }
 
   const resetLast = () => {
-    if (actionHistory.length === 0) return
+    if (cartItemsList.length === 0) return
 
     // Letztes Item aus cartItemsList entfernen
     setCartItemsList((prev) => {

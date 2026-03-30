@@ -19,6 +19,8 @@ export default function CheckoutLayout() {
     sessionStorage.getItem('customerCard') || ''
   )
 
+  const isSummary = location.pathname.includes('/summary')
+
   const loadCart = useCallback(() => {
     const stored = sessionStorage.getItem('cartItems')
     setCartItems(stored ? JSON.parse(stored) : [])
@@ -30,6 +32,84 @@ export default function CheckoutLayout() {
     window.addEventListener('cartUpdated', loadCart)
     return () => window.removeEventListener('cartUpdated', loadCart)
   }, [loadCart])
+
+  // ── Cart-Bearbeitung (für editable Sidebar auf SummaryPage) ──
+
+  const handleUpdateQuantity = (key, newQuantity) => {
+    // cartItems ist eine flache Liste (jedes Item mit quantity: 1).
+    // Wir müssen Items mit passendem key auf die neue Menge bringen.
+    const stored = sessionStorage.getItem('cartItems')
+    const allItems = stored ? JSON.parse(stored) : []
+
+    // Alle Items mit diesem Key finden
+    const matchingItems = allItems.filter((item) => (item.barcode || item.name) === key)
+    const otherItems = allItems.filter((item) => (item.barcode || item.name) !== key)
+
+    if (matchingItems.length === 0) return
+
+    // Template vom ersten Match nehmen
+    const template = { ...matchingItems[0], quantity: 1 }
+
+    // Neue Menge an Items erstellen
+    const newItems = []
+    for (let i = 0; i < newQuantity; i++) {
+      newItems.push({ ...template })
+    }
+
+    const updatedCart = [...otherItems, ...newItems]
+    sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
+
+    // Auch cartItemsList aktualisieren (für ScanPage-Kompatibilität)
+    updateCartItemsList(key, newQuantity)
+
+    window.dispatchEvent(new Event('cartUpdated'))
+  }
+
+  const handleRemoveItem = (key) => {
+    const stored = sessionStorage.getItem('cartItems')
+    const allItems = stored ? JSON.parse(stored) : []
+
+    const updatedCart = allItems.filter((item) => (item.barcode || item.name) !== key)
+    sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
+
+    // Auch cartItemsList aktualisieren
+    updateCartItemsList(key, 0)
+
+    window.dispatchEvent(new Event('cartUpdated'))
+  }
+
+  const updateCartItemsList = (key, newQuantity) => {
+    const stored = sessionStorage.getItem('cartItemsList')
+    if (!stored) return
+
+    const list = JSON.parse(stored)
+
+    // Alle Einträge mit passendem Key finden
+    const matchingIndices = []
+    list.forEach((item, i) => {
+      const itemKey = item.barcode || item.name
+      if (itemKey === key) matchingIndices.push(i)
+    })
+
+    if (matchingIndices.length === 0) return
+
+    // Entfernen
+    if (newQuantity === 0) {
+      const updated = list.filter((_, i) => !matchingIndices.includes(i))
+      sessionStorage.setItem('cartItemsList', JSON.stringify(updated))
+      return
+    }
+
+    // Menge anpassen: Erst alle entfernen, dann neu hinzufügen
+    const template = { ...list[matchingIndices[0]] }
+    const otherItems = list.filter((_, i) => !matchingIndices.includes(i))
+
+    for (let i = 0; i < newQuantity; i++) {
+      otherItems.push({ ...template })
+    }
+
+    sessionStorage.setItem('cartItemsList', JSON.stringify(otherItems))
+  }
 
   const isActive = (path) => location.pathname.includes(path)
 
@@ -124,8 +204,12 @@ export default function CheckoutLayout() {
         </button>
       </div>
 
-      <main className="flex-1 grid grid-cols-3 gap-6">
-        <section className="col-span-2 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col relative overflow-hidden shadow-sm">
+      <main className="flex-1 grid gap-6" style={{ gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr' }}>
+        <section
+          className={`bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col relative overflow-hidden shadow-sm ${
+            isSummary ? 'order-1' : 'order-1'
+          }`}
+        >
           <div className="p-4 flex-1 overflow-y-auto">
             <Outlet />
           </div>
@@ -139,8 +223,18 @@ export default function CheckoutLayout() {
           <HelpModal isOpen={showHelpModal} onClose={handleHelpClose} />
         </section>
 
-        <aside className="col-span-1 bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col shadow-sm overflow-hidden">
-          <Sidebar items={cartItems} customerCard={customerCard} />
+        <aside
+          className={`bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col shadow-sm overflow-hidden ${
+            isSummary ? 'order-2' : 'order-2'
+          }`}
+        >
+          <Sidebar
+            items={cartItems}
+            customerCard={customerCard}
+            editable={isSummary}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+          />
         </aside>
       </main>
     </div>

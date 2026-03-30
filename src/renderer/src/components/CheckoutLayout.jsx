@@ -204,7 +204,7 @@ export default function CheckoutLayout() {
         </button>
       </div>
 
-      <main className="flex-1 grid gap-6" style={{ gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr' }}>
+      <main className="flex-1 grid gap-6" style={{ gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr', transition: 'grid-template-columns 300ms ease' }}>
         <section
           className={`bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col relative overflow-hidden shadow-sm ${
             isSummary ? 'order-1' : 'order-1'

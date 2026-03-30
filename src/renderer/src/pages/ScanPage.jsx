@@ -14,8 +14,24 @@ export default function ScanPage() {
   const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
-  const [scannedBarcodeItems, setScannedBarcodeItems] = useState([])
+
+  // Einzige geordnete Liste aller Artikel (manuelle + Barcode)
+  // Jeder Eintrag: { type: 'manual', id, name, price } oder { type: 'barcode', barcode, name, price, discount }
+  const [cartItemsList, setCartItemsList] = useState(() => {
+    const stored = sessionStorage.getItem('cartItemsList')
+    return stored ? JSON.parse(stored) : []
+  })
+
+  // Action-History für Undo-Funktionalität
   const [actionHistory, setActionHistory] = useState([])
+
+  // Counts für die Produkt-Grid-Anzeige ableiten
+  const counts = cartItemsList.reduce((acc, item) => {
+    if (item.type === 'manual') {
+      acc[item.id] = (acc[item.id] || 0) + 1
+    }
+    return acc
+  }, {})
 
   const focusBarcodeInput = useCallback(() => {
     if (barcodeRef.current) {
@@ -62,26 +78,40 @@ export default function ScanPage() {
     if (!barcodeInput.trim()) return
     const barcode = barcodeInput.trim()
     setScanStatus(null)
+
+    // Kundenkarte scannen
+    if (sessionStorage.getItem('pendingCustomerCard') === 'true') {
+      sessionStorage.removeItem('pendingCustomerCard')
+      sessionStorage.setItem('customerCard', barcode)
+      window.dispatchEvent(new Event('cartUpdated'))
+      setScanStatus({ type: 'success', message: `Kundenkarte ${barcode} erfasst` })
+      window.api?.tapo?.flashGreen()
+      setBarcodeInput('')
+      return
+    }
+
+    // Produkt scannen
     try {
       const product = await scannerApi.sendBarcode(barcode)
       const item = {
+        type: 'barcode',
         barcode,
         name: product.name || `Unbekannt (${barcode})`,
         price: product.price || 0,
-        quantity: 1
+        discount: product.discount || null
       }
-      setScannedBarcodeItems((prev) => [...prev, item])
+      setCartItemsList((prev) => [...prev, item])
       setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
     } catch {
       const item = {
+        type: 'barcode',
         barcode,
         name: `Unbekannt (${barcode})`,
-        price: 0,
-        quantity: 1
+        price: 0
       }
-      setScannedBarcodeItems((prev) => [...prev, item])
+      setCartItemsList((prev) => [...prev, item])
       setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
       window.api?.tapo?.flashRed()
@@ -91,62 +121,69 @@ export default function ScanPage() {
 
   const [activeCategory, setActiveCategory] = useState(null)
 
-  const [counts, setCounts] = useState({})
-
   const increase = (id) => {
-    setCounts((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1
-    }))
+    const product = Object.values(products)
+      .flat()
+      .find((p) => p.id === id)
+    if (!product) return
+    setCartItemsList((prev) => [...prev, { type: 'manual', id: product.id, name: product.name, price: 0 }])
     setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
 
   const decrease = (id) => {
-    setCounts((prev) => ({
-      ...prev,
-      [id]: Math.max((prev[id] || 0) - 1, 0)
-    }))
+    setCartItemsList((prev) => {
+      // Letztes Vorkommen dieses Produkts entfernen
+      const lastIndex = findLastIndex(prev, (item) => item.type === 'manual' && item.id === id)
+      if (lastIndex === -1) return prev
+      return [...prev.slice(0, lastIndex), ...prev.slice(lastIndex + 1)]
+    })
   }
 
   const resetLast = () => {
     if (actionHistory.length === 0) return
 
-    const lastAction = actionHistory[actionHistory.length - 1]
+    // Letztes Item aus cartItemsList entfernen
+    setCartItemsList((prev) => {
+      if (prev.length === 0) return prev
+      return prev.slice(0, -1)
+    })
 
-    if (lastAction.type === 'category') {
-      setCounts((prev) => ({
-        ...prev,
-        [lastAction.productId]: Math.max((prev[lastAction.productId] || 0) - 1, 0)
-      }))
-    } else if (lastAction.type === 'barcode') {
-      setScannedBarcodeItems((prev) => prev.slice(0, -1))
-    }
-
+    // actionHistory aktualisieren
     setActionHistory((prev) => prev.slice(0, -1))
   }
 
-  // Scanned items für die nächsten Pages zusammenbauen
-  const getScannedItems = () => {
-    const items = []
-    for (const category of Object.values(products)) {
-      for (const product of category) {
-        const count = counts[product.id] || 0
-        if (count > 0) {
-          items.push({ ...product, quantity: count, price: 0 })
-        }
-      }
+  // Hilfsfunktion: findLastIndex (für ältere JS-Umgebungen)
+  const findLastIndex = (arr, predicate) => {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (predicate(arr[i])) return i
     }
-    return [...items, ...scannedBarcodeItems]
+    return -1
+  }
+
+  // Cart-Items für Sidebar und sessionStorage zusammenbauen (jedes Item einzeln mit quantity: 1)
+  const getScannedItems = () => {
+    return cartItemsList.map((item) => {
+      if (item.type === 'manual') {
+        return { name: item.name, id: item.id, price: 0, quantity: 1 }
+      }
+      return {
+        barcode: item.barcode,
+        name: item.name,
+        price: item.price || 0,
+        discount: item.discount || null,
+        quantity: 1
+      }
+    })
   }
 
   useEffect(() => {
     const allItems = getScannedItems()
-    if (allItems.length > 0) {
-      sessionStorage.setItem('cartItems', JSON.stringify(allItems))
-    }
-  }, [counts, scannedBarcodeItems])
+    sessionStorage.setItem('cartItems', JSON.stringify(allItems))
+    sessionStorage.setItem('cartItemsList', JSON.stringify(cartItemsList))
+    window.dispatchEvent(new Event('cartUpdated'))
+  }, [cartItemsList])
 
-  const hasItems = Object.values(counts).some((c) => c > 0) || scannedBarcodeItems.length > 0
+  const hasItems = cartItemsList.length > 0
 
   const handleNavigateToSummary = () => {
     const items = getScannedItems()

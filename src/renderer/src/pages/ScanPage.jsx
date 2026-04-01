@@ -57,7 +57,12 @@ export default function ScanPage() {
   const [aktiveProdukteList, setAktiveProdukteList] = useState([])
 
   useEffect(() => {
-    kategorieApi.getAlleKategorien().then(setKategorien).catch(console.error)
+    const anzeigeKategorien = ['Obst', 'Gemüse', 'Backwaren']
+    kategorieApi
+      .getAlleKategorien()
+      .then((alle) => alle.filter((k) => anzeigeKategorien.includes(k.bezeichnung)))
+      .then(setKategorien)
+      .catch(console.error)
   }, [])
 
   const handleBarcodeScan = async () => {

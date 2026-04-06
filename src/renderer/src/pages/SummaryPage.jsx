@@ -3,9 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import CustomerCardModal from '../components/CustomerCardModal'
 import EmployeeAuthModal from '../components/EmployeeAuthModal'
 import RandomInspectionVerificationModal from '../components/RandomInspectionModal'
+import { useEmployeeAuth } from '../hooks/useEmployeeAuth'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
 import HandsIcon from '../assets/Icons/Hands.png'
 import WarningIcon from '../assets/Icons/Warning.png'
+
 export default function SummaryPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -20,6 +22,7 @@ export default function SummaryPage() {
   const [showEmployeeAuth, setShowEmployeeAuth] = useState(false)
   const [showInspectionVerification, setShowInspectionVerification] = useState(false)
   const [authenticatedEmployee, setAuthenticatedEmployee] = useState(null)
+  const employeeAuth = useEmployeeAuth()
   const handleContinueToPayment = () => {
     // Prüfen, ob Zufallskontrolle ausgelöst werden soll
     if (!inspectionCompleted && !inspectionSelected) {
@@ -37,7 +40,6 @@ export default function SummaryPage() {
   const handleEmployeeAuthSuccess = (employeeData) => {
     setAuthenticatedEmployee(employeeData)
     setShowEmployeeAuth(false)
-    // Nach erfolgreicher Anmeldung → Kontrolle starten
     setShowInspectionVerification(true)
   }
 
@@ -147,8 +149,14 @@ export default function SummaryPage() {
       
       <EmployeeAuthModal
         isOpen={showEmployeeAuth}
-        onSuccess={handleEmployeeAuthSuccess}
-        onCancel={handleEmployeeAuthCancel}
+        benutzername={employeeAuth.benutzername}
+        setBenutzername={employeeAuth.setBenutzername}
+        passwort={employeeAuth.passwort}
+        setPasswort={employeeAuth.setPasswort}
+        isLoading={employeeAuth.isLoading}
+        error={employeeAuth.error}
+        onAnmelden={() => employeeAuth.anmelden(handleEmployeeAuthSuccess)}
+        onAbbrechen={() => employeeAuth.abbrechen(handleEmployeeAuthCancel)}
       />
 
       <RandomInspectionVerificationModal

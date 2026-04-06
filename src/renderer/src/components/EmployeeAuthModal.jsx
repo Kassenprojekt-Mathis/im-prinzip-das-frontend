@@ -1,70 +1,21 @@
-import { useState } from 'react'
 import Modal from './Modal'
 import PropTypes from 'prop-types'
 import PersonIcon from '../assets/Icons/Person.png'
 
-// Mockdaten für Mitarbeiter
-const MOCK_USERS = [
-  {
-    id: 1,
-    name: 'ImPrinzipDerMitarbeiter',
-    pin: 'Tommy123'
-  }
-]
-
-export default function EmployeeAuthModal({ isOpen, onSuccess, onCancel }) {
-  const [selectedUserId, setSelectedUserId] = useState('')
-  const [pin, setPin] = useState('')
-  const [authError, setAuthError] = useState('')
-
-  const resetForm = () => {
-    setSelectedUserId('')
-    setPin('')
-    setAuthError('')
-  }
-
-  const handleAuth = () => {
-    setAuthError('')
-
-    if (!selectedUserId) {
-      setAuthError('Bitte wählen Sie einen Mitarbeiter aus')
-      return
-    }
-
-    if (!pin.trim()) {
-      setAuthError('Bitte geben Sie Ihre PIN ein')
-      return
-    }
-
-    // PIN überprüfen
-    const selectedUser = MOCK_USERS.find((u) => u.id === parseInt(selectedUserId))
-    
-    if (!selectedUser) {
-      setAuthError('Ungültiger Mitarbeiter')
-      return
-    }
-
-    if (pin !== selectedUser.pin) {
-      setAuthError('Falsche PIN')
-      return
-    }
-
-    // Authentifizierung erfolgreich
-    resetForm()
-    onSuccess({
-      userId: selectedUserId,
-      userName: selectedUser.name
-    })
-  }
-
-  const handleCancel = () => {
-    resetForm()
-    onCancel()
-  }
-
-  const handleKeyPress = (e) => {
+export default function EmployeeAuthModal({
+  isOpen,
+  benutzername,
+  setBenutzername,
+  passwort,
+  setPasswort,
+  isLoading,
+  error,
+  onAnmelden,
+  onAbbrechen
+}) {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      handleAuth()
+      onAnmelden()
     }
   }
 
@@ -81,24 +32,20 @@ export default function EmployeeAuthModal({ isOpen, onSuccess, onCancel }) {
         </p>
 
         <div className="space-y-4 mb-6">
-          {/* Mitarbeiter Drop Down Menü */}
+          {/* Benutzername-Eingabe */}
           <div className="text-left">
-              <label htmlFor="employee-select" className="block text-sm font-semibold text-gray-700 mb-2">
-              Mitarbeiter
+            <label htmlFor="username-input" className="block text-sm font-semibold text-gray-700 mb-2">
+              Benutzername
             </label>
-            <select
-              id="employee-select"
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
+            <input
+              id="username-input"
+              type="text"
+              value={benutzername}
+              onChange={(e) => setBenutzername(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Benutzername eingeben"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#948BB8] focus:border-transparent text-gray-800"
-            >
-              <option value="">-- Bitte auswählen --</option>
-              {MOCK_USERS.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* PIN-Eingabe */}
@@ -109,18 +56,18 @@ export default function EmployeeAuthModal({ isOpen, onSuccess, onCancel }) {
             <input
               id="pin-input"
               type="password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              onKeyPress={handleKeyPress}
+              value={passwort}
+              onChange={(e) => setPasswort(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="PIN eingeben"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#948BB8] focus:border-transparent text-gray-800 text-center text-xl tracking-wide"
             />
           </div>
 
           {/* Fehleranzeige */}
-          {authError && (
+          {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {authError}
+              {error}
             </div>
           )}
         </div>
@@ -128,18 +75,20 @@ export default function EmployeeAuthModal({ isOpen, onSuccess, onCancel }) {
         {/* Buttons */}
         <div className="flex gap-4 justify-center">
           <button
-            onClick={handleCancel}
-            className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors hover:opacity-90"
+            onClick={onAbbrechen}
+            disabled={isLoading}
+            className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: '#E1E1F2' }}
           >
             Abbrechen
           </button>
           <button
-            onClick={handleAuth}
-            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors hover:opacity-90"
+            onClick={onAnmelden}
+            disabled={isLoading}
+            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: '#948BB8' }}
           >
-            Anmelden
+            {isLoading ? 'Wird geprüft...' : 'Anmelden'}
           </button>
         </div>
       </div>
@@ -149,6 +98,12 @@ export default function EmployeeAuthModal({ isOpen, onSuccess, onCancel }) {
 
 EmployeeAuthModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
-  onSuccess: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  benutzername: PropTypes.string.isRequired,
+  setBenutzername: PropTypes.func.isRequired,
+  passwort: PropTypes.string.isRequired,
+  setPasswort: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  error: PropTypes.string.isRequired,
+  onAnmelden: PropTypes.func.isRequired,
+  onAbbrechen: PropTypes.func.isRequired
 }

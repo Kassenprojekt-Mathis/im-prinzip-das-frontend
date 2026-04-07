@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
+import { useLogin } from '../hooks/useLogin'
 import logoPrinzip from '../assets/Prinzip_Logo.png'
 import RandomInspectionVerificationModal from './RandomInspectionModal'
+import InspectionFailedModal from './InspectionFailedModal'
+import Login from './Login'
+import EmployeeMenuModal from './EmployeeMenuModal'
 import HelpModal from './HelpModal'
 import Sidebar from './Sidebar'
 
@@ -10,14 +14,17 @@ export default function CheckoutLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const devMode = useDevMode()
+  const loginAuth = useLogin()
 
   const [showInspectionVerification, setShowInspectionVerification] = useState(false)
+  const [showInspectionFailed, setShowInspectionFailed] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [showLogin, setShowLogin] = useState(false)
+  const [showEmployeeMenu, setShowEmployeeMenu] = useState(false)
   const [cartItems, setCartItems] = useState([])
+  const [customerCard, setCustomerCard] = useState(sessionStorage.getItem('customerCard') || '')
 
-  const [customerCard, setCustomerCard] = useState(
-    sessionStorage.getItem('customerCard') || ''
-  )
+  const inspectionActive = sessionStorage.getItem('inspectionActive') === 'true'
 
   const loadCart = useCallback(() => {
     const stored = sessionStorage.getItem('cartItems')
@@ -28,16 +35,54 @@ export default function CheckoutLayout() {
   useEffect(() => {
     loadCart()
     window.addEventListener('cartUpdated', loadCart)
-    return () => window.removeEventListener('cartUpdated', loadCart)
+    window.addEventListener('inspectionStatusChanged', loadCart)
+    return () => {
+      window.removeEventListener('cartUpdated', loadCart)
+      window.removeEventListener('inspectionStatusChanged', loadCart)
+    }
   }, [loadCart])
 
   const isActive = (path) => location.pathname.includes(path)
 
-  const inspectionActive = sessionStorage.getItem('inspectionActive') === 'true'
+  const handleLogoClick = () => {
+    setShowLogin(true)
+  }
 
-  const handleRandomInspection = () => {
-    if (!inspectionActive) return
-    setShowInspectionVerification(true)
+  const handleLoginSuccess = () => {
+    setShowLogin(false)
+    setShowEmployeeMenu(true)
+  }
+
+  const handleLoginCancel = () => {
+    setShowLogin(false)
+  }
+
+  const handleEmployeeMenuClose = () => {
+    setShowEmployeeMenu(false)
+  }
+
+  const handleInspectionClick = () => {
+    setShowEmployeeMenu(false)
+    if (inspectionActive) {
+      setShowInspectionVerification(true)
+    } else {
+      alert('Aktuell keine Kontrolle')
+    }
+  }
+
+  const handleProductsClick = () => {
+    setShowEmployeeMenu(false)
+    sessionStorage.setItem('employeeAuthorized', 'true')
+    navigate('/products')
+  }
+
+  const handleResetClick = () => {
+    if (window.confirm('Einkauf wirklich zurücksetzen?')) {
+      setShowEmployeeMenu(false)
+      sessionStorage.clear()
+      window.dispatchEvent(new Event('cartUpdated'))
+      navigate('/scan')
+    }
   }
 
   const handleHelp = () => {
@@ -52,14 +97,30 @@ export default function CheckoutLayout() {
     setShowInspectionVerification(false)
     sessionStorage.setItem('inspectionCompleted', 'true')
     sessionStorage.removeItem('inspectionActive')
+    window.dispatchEvent(new Event('inspectionStatusChanged'))
     navigate('/summary')
   }
 
   const handleInspectionVerificationNo = () => {
     setShowInspectionVerification(false)
-    sessionStorage.setItem('inspectionCompleted', 'true')
+    window.api?.tapo?.flashRed()
+    setShowInspectionFailed(true)
+  }
+
+  const handleInspectionAnpassen = () => {
+    setShowInspectionFailed(false)
     sessionStorage.removeItem('inspectionActive')
-    navigate('/summary')
+    sessionStorage.setItem('inspectionCompleted', 'true')
+    window.dispatchEvent(new Event('inspectionStatusChanged'))
+    navigate('/scan')
+  }
+
+  const handleInspectionBeenden = () => {
+    setShowInspectionFailed(false)
+    window.api?.printer?.printReceipt(cartItems)
+    sessionStorage.clear()
+    window.dispatchEvent(new Event('inspectionStatusChanged'))
+    navigate('/scan')
   }
 
   return (
@@ -71,13 +132,8 @@ export default function CheckoutLayout() {
       )}
       <header className="flex justify-between items-center mb-4">
         <button
-          onClick={handleRandomInspection}
-          disabled={!inspectionActive}
-          className={`h-16 w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md ${
-            inspectionActive
-              ? 'hover:opacity-90 transition-opacity cursor-pointer'
-              : 'cursor-default'
-          }`}
+          onClick={handleLogoClick}
+          className="h-16 w-48 bg-[#1E1B4B] rounded-lg flex items-center justify-center overflow-hidden shadow-md hover:opacity-90 transition-opacity cursor-pointer"
         >
           <img src={logoPrinzip} alt="Prinzip Logo" />
         </button>
@@ -92,7 +148,7 @@ export default function CheckoutLayout() {
 
       <div className="flex w-full h-10 mb-4 text-lg font-bold">
         <button
-          onClick={() => navigate('/scan')}
+          onClick={() => !inspectionActive && navigate('/scan')}
           className={`flex-1 bg-[#D9DADD] flex items-center justify-center relative z-10 transition-colors ${
             isActive('/scan') ? 'text-white' : 'text-[#4A4A68]'
           }`}
@@ -102,6 +158,7 @@ export default function CheckoutLayout() {
         </button>
         <button
           onClick={() => {
+            if (inspectionActive) return
             const fromPayment = location.pathname === '/payment'
             navigate('/summary', { state: { fromPayment } })
           }}
@@ -114,7 +171,7 @@ export default function CheckoutLayout() {
         </button>
 
         <button
-          onClick={() => navigate('/payment')}
+          onClick={() => !inspectionActive && navigate('/payment')}
           className={`flex-1 bg-[#D9DADD] flex items-center justify-center relative z-30 -ml-[2%] transition-colors ${
             isActive('/payment') ? 'text-white' : 'text-[#4A4A68]'
           }`}
@@ -143,6 +200,34 @@ export default function CheckoutLayout() {
           <Sidebar items={cartItems} customerCard={customerCard} />
         </aside>
       </main>
+
+      <Login
+        isOpen={showLogin}
+        selectedUsername={loginAuth.selectedUsername}
+        setSelectedUsername={loginAuth.setSelectedUsername}
+        password={loginAuth.password}
+        setPassword={loginAuth.setPassword}
+        employeeList={loginAuth.employeeList}
+        isLoading={loginAuth.isLoading}
+        error={loginAuth.error}
+        onLoadEmployees={loginAuth.loadEmployees}
+        onAuth={() => loginAuth.login(handleLoginSuccess)}
+        onCancel={() => loginAuth.cancelLogin(handleLoginCancel)}
+      />
+
+      <EmployeeMenuModal
+        isOpen={showEmployeeMenu}
+        onInspectionClick={handleInspectionClick}
+        onProductsClick={handleProductsClick}
+        onResetClick={handleResetClick}
+        onClose={handleEmployeeMenuClose}
+      />
+
+      <InspectionFailedModal
+        isOpen={showInspectionFailed}
+        onAnpassen={handleInspectionAnpassen}
+        onBeenden={handleInspectionBeenden}
+      />
     </div>
   )
 }

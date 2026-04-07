@@ -4,7 +4,7 @@ const API_BASE_URL = 'http://localhost:8000'
 
 export const userApi = {
   async getUsers() {
-    const response = await fetch(`${API_BASE_URL}/users`)
+    const response = await fetch(`${API_BASE_URL}/api/mitarbeiter/`)
     if (!response.ok) {
       throw new Error('Fehler beim Laden der Benutzerdaten')
     }

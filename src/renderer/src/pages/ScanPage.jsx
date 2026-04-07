@@ -126,7 +126,10 @@ export default function ScanPage() {
       .flat()
       .find((p) => p.id === id)
     if (!product) return
-    setCartItemsList((prev) => [...prev, { type: 'manual', id: product.id, name: product.name, price: 0 }])
+    setCartItemsList((prev) => [
+      ...prev,
+      { type: 'manual', id: product.id, name: product.name, price: 0 }
+    ])
     setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
 
@@ -202,9 +205,10 @@ export default function ScanPage() {
         onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
         onBlur={() => setTimeout(focusBarcodeInput, 50)}
         placeholder="Barcode eingeben..."
-        className={devMode
-          ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
-          : 'absolute opacity-0 pointer-events-none'
+        className={
+          devMode
+            ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
+            : 'absolute opacity-0 pointer-events-none'
         }
       />
 
@@ -317,7 +321,6 @@ export default function ScanPage() {
               </div>
             ))}
           </div>
-
         </>
       )}
 

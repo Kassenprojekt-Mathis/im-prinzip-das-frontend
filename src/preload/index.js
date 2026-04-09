@@ -1,8 +1,13 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { printerApi } from './printerApi'
+import { tapoApi } from './tapoApi'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  printer: printerApi,
+  tapo: tapoApi
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

@@ -2,6 +2,14 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import {
+  getAvailablePrinters,
+  setPrinter,
+  getCurrentPrinter,
+  printReceipt,
+  printTestReceipt
+} from './printerService'
+import { flashGreen, flashRed, setColor, setHSL, turnOn, turnOff, getStatus } from './tapoService'
 
 function createWindow() {
   // Create the browser window.
@@ -51,6 +59,67 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // ── Printer IPC Handlers ──
+  ipcMain.handle('printer:getAvailable', async () => {
+    return await getAvailablePrinters()
+  })
+
+  ipcMain.handle('printer:getCurrent', () => {
+    return getCurrentPrinter()
+  })
+
+  ipcMain.handle('printer:set', (_event, printerName) => {
+    setPrinter(printerName)
+    return { success: true, printer: printerName }
+  })
+
+  ipcMain.handle('printer:printReceipt', async (_event, receiptData) => {
+    return await printReceipt(receiptData)
+  })
+
+  ipcMain.handle('printer:printTest', async () => {
+    return await printTestReceipt()
+  })
+
+  // ── Tapo Lightbulb IPC Handlers ──
+  ipcMain.handle('tapo:flashGreen', async () => {
+    return await flashGreen()
+  })
+
+  ipcMain.handle('tapo:flashRed', async () => {
+    return await flashRed()
+  })
+
+  ipcMain.handle('tapo:setColor', async (_event, colour) => {
+    try {
+      await setColor(colour)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('tapo:setHSL', async (_event, hue, saturation, luminance) => {
+    try {
+      await setHSL(hue, saturation, luminance)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('tapo:turnOn', async () => {
+    return await turnOn()
+  })
+
+  ipcMain.handle('tapo:turnOff', async () => {
+    return await turnOff()
+  })
+
+  ipcMain.handle('tapo:getStatus', async () => {
+    return await getStatus()
+  })
 
   createWindow()
 

@@ -15,9 +15,7 @@ export default function CheckoutLayout() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [cartItems, setCartItems] = useState([])
 
-  const [customerCard, setCustomerCard] = useState(
-    sessionStorage.getItem('customerCard') || ''
-  )
+  const [customerCard, setCustomerCard] = useState(sessionStorage.getItem('customerCard') || '')
 
   const isSummary = location.pathname.includes('/summary')
 
@@ -33,24 +31,17 @@ export default function CheckoutLayout() {
     return () => window.removeEventListener('cartUpdated', loadCart)
   }, [loadCart])
 
-  // ── Cart-Bearbeitung (für editable Sidebar auf SummaryPage) ──
-
   const handleUpdateQuantity = (key, newQuantity) => {
-    // cartItems ist eine flache Liste (jedes Item mit quantity: 1).
-    // Wir müssen Items mit passendem key auf die neue Menge bringen.
     const stored = sessionStorage.getItem('cartItems')
     const allItems = stored ? JSON.parse(stored) : []
 
-    // Alle Items mit diesem Key finden
     const matchingItems = allItems.filter((item) => (item.barcode || item.name) === key)
     const otherItems = allItems.filter((item) => (item.barcode || item.name) !== key)
 
     if (matchingItems.length === 0) return
 
-    // Template vom ersten Match nehmen
     const template = { ...matchingItems[0], quantity: 1 }
 
-    // Neue Menge an Items erstellen
     const newItems = []
     for (let i = 0; i < newQuantity; i++) {
       newItems.push({ ...template })
@@ -59,7 +50,6 @@ export default function CheckoutLayout() {
     const updatedCart = [...otherItems, ...newItems]
     sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
 
-    // Auch cartItemsList aktualisieren (für ScanPage-Kompatibilität)
     updateCartItemsList(key, newQuantity)
 
     window.dispatchEvent(new Event('cartUpdated'))
@@ -72,7 +62,6 @@ export default function CheckoutLayout() {
     const updatedCart = allItems.filter((item) => (item.barcode || item.name) !== key)
     sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
 
-    // Auch cartItemsList aktualisieren
     updateCartItemsList(key, 0)
 
     window.dispatchEvent(new Event('cartUpdated'))
@@ -84,7 +73,6 @@ export default function CheckoutLayout() {
 
     const list = JSON.parse(stored)
 
-    // Alle Einträge mit passendem Key finden
     const matchingIndices = []
     list.forEach((item, i) => {
       const itemKey = item.barcode || item.name
@@ -93,14 +81,12 @@ export default function CheckoutLayout() {
 
     if (matchingIndices.length === 0) return
 
-    // Entfernen
     if (newQuantity === 0) {
       const updated = list.filter((_, i) => !matchingIndices.includes(i))
       sessionStorage.setItem('cartItemsList', JSON.stringify(updated))
       return
     }
 
-    // Menge anpassen: Erst alle entfernen, dann neu hinzufügen
     const template = { ...list[matchingIndices[0]] }
     const otherItems = list.filter((_, i) => !matchingIndices.includes(i))
 
@@ -204,7 +190,13 @@ export default function CheckoutLayout() {
         </button>
       </div>
 
-      <main className="flex-1 grid gap-6" style={{ gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr', transition: 'grid-template-columns 300ms ease' }}>
+      <main
+        className="flex-1 grid gap-6"
+        style={{
+          gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr',
+          transition: 'grid-template-columns 300ms ease'
+        }}
+      >
         <section
           className={`bg-white border-[6px] border-[#D9DADD] rounded-xl flex flex-col relative overflow-hidden shadow-sm ${
             isSummary ? 'order-1' : 'order-1'

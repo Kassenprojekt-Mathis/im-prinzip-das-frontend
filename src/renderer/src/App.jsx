@@ -9,20 +9,20 @@ import PaymentPage from './pages/PaymentPage'
 export default function App() {
   return (
     <DevModeProvider>
-    <HashRouter>
-      <Routes>
-        {/* Layout, dass sich nicht verändert */}
-        <Route path="/" element={<CheckoutLayout />}>
-          {/*  Default-Route */}
-          <Route index element={<Navigate to="/scan" replace />} />
-          {/* Die drei Kassen-Pages */}
-          <Route path="scanhome" element={<ScanPageHome />} />
-          <Route path="scan" element={<ScanPage />} />
-          <Route path="summary" element={<SummaryPage />} />
-          <Route path="payment" element={<PaymentPage />} />
-        </Route>
-      </Routes>
-    </HashRouter>
+      <HashRouter>
+        <Routes>
+          {/* Layout, dass sich nicht verändert */}
+          <Route path="/" element={<CheckoutLayout />}>
+            {/*  Default-Route */}
+            <Route index element={<Navigate to="/scan" replace />} />
+            {/* Die drei Kassen-Pages */}
+            <Route path="scanhome" element={<ScanPageHome />} />
+            <Route path="scan" element={<ScanPage />} />
+            <Route path="summary" element={<SummaryPage />} />
+            <Route path="payment" element={<PaymentPage />} />
+          </Route>
+        </Routes>
+      </HashRouter>
     </DevModeProvider>
   )
 }

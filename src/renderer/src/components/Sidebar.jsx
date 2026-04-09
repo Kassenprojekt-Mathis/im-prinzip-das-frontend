@@ -1,4 +1,10 @@
-export default function Sidebar({ items = [], customerCard }) {
+export default function Sidebar({
+  items = [],
+  customerCard,
+  editable = false,
+  onUpdateQuantity,
+  onRemoveItem
+}) {
   const fmt = (n) => n.toFixed(2).replace('.', ',')
 
   const grouped = items.reduce((acc, item) => {
@@ -24,6 +30,25 @@ export default function Sidebar({ items = [], customerCard }) {
 
   const total = totalBeforeDiscount - totalDiscount
 
+  const handleIncrease = (item) => {
+    const key = item.barcode || item.name
+    onUpdateQuantity?.(key, item.quantity + 1)
+  }
+
+  const handleDecrease = (item) => {
+    const key = item.barcode || item.name
+    if (item.quantity <= 1) {
+      onRemoveItem?.(key)
+    } else {
+      onUpdateQuantity?.(key, item.quantity - 1)
+    }
+  }
+
+  const handleRemove = (item) => {
+    const key = item.barcode || item.name
+    onRemoveItem?.(key)
+  }
+
   return (
     <>
       <div className="flex-1 p-4 overflow-y-auto text-[#1e1e38]">
@@ -32,9 +57,10 @@ export default function Sidebar({ items = [], customerCard }) {
         ) : (
           grouped.map((item, i) => (
             <div key={i} className="mb-3">
-              <div className="flex justify-between gap-2">
-                <div className="flex gap-2 truncate">
-                  {item.quantity > 1 && (
+              {/* Artikelzeile */}
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex gap-2 truncate items-center">
+                  {!editable && item.quantity > 1 && (
                     <span className="text-xl font-bold text-[#4338CA]">{item.quantity}×</span>
                   )}
                   <span className="text-xl font-semibold truncate">{item.name}</span>
@@ -43,12 +69,44 @@ export default function Sidebar({ items = [], customerCard }) {
                   {fmt((item.price || 0) * (item.quantity || 1))} €
                 </span>
               </div>
+
+              {/* Rabatt-Zeile */}
               {item.discount && (
                 <div className="flex justify-between gap-2 pl-4 text-[#4338CA]">
                   <span className="text-base truncate">{item.discount.label}</span>
                   <span className="text-base whitespace-nowrap">
                     -{fmt(item.discount.amount * (item.quantity || 1))} €
                   </span>
+                </div>
+              )}
+
+              {/* Bearbeitungs-Buttons (nur im editable-Modus) */}
+              {editable && (
+                <div className="flex items-center justify-between mt-1 pl-1">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleDecrease(item)}
+                      className="w-8 h-8 flex items-center justify-center bg-[#E1E1F2] rounded-lg text-lg font-bold text-[#1e1e38] hover:bg-[#d0d0e8] active:scale-95 transition-transform"
+                    >
+                      −
+                    </button>
+                    <span className="text-lg font-bold min-w-[1.5rem] text-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => handleIncrease(item)}
+                      className="w-8 h-8 flex items-center justify-center bg-[#E1E1F2] rounded-lg text-lg font-bold text-[#1e1e38] hover:bg-[#d0d0e8] active:scale-95 transition-transform"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(item)}
+                    className="w-8 h-8 flex items-center justify-center bg-red-100 rounded-lg text-red-600 hover:bg-red-200 active:scale-95 transition-transform"
+                    title="Artikel entfernen"
+                  >
+                    🗑️
+                  </button>
                 </div>
               )}
             </div>

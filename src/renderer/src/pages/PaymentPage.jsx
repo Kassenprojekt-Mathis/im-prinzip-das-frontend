@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { printerApi } from '../api/printerAPI'
+import { productApi } from '../api/productAPI'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -91,12 +92,33 @@ export default function PaymentPage() {
     }
   }
 
-  const handleCardPayment = () => {
+  const updateStock = async () => {
+    try {
+      // Vorbereitung Lagerbestandsaktualisierung
+      const stockItems = items.map((item) => ({
+        id: item.id || null,
+        barcode: item.barcode || null,
+        quantity: item.quantity || 1
+      }))
+
+      if (stockItems.length > 0) {
+        await productApi.reduceStock(stockItems)
+        console.log('Lagerbestand erfolgreich aktualisiert')
+      }
+    } catch (error) {
+      console.error('Fehler beim Aktualisieren des Lagerbestands:', error)
+      // Fehler wird geloggt aber Zahlung wird nicht blockiert
+    }
+  }
+
+  const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
+    await updateStock()
     setPaymentComplete(true)
   }
-  const handleCashPayment = () => {
+  const handleCashPayment = async () => {
     setPaymentMethod('Bar')
+    await updateStock()
     setPaymentComplete(true)
   }
   const handleNextPurchase = () => {

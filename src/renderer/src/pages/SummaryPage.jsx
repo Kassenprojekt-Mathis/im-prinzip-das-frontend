@@ -4,26 +4,34 @@ import CustomerCardModal from '../components/CustomerCardModal'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
 import HandsIcon from '../assets/Icons/Hands.png'
 import WarningIcon from '../assets/Icons/Warning.png'
+
 export default function SummaryPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const fromPayment = location.state?.fromPayment || false
   const customerCardAsked = sessionStorage.getItem('customerCardAsked') === 'true'
   const inspectionCompleted = sessionStorage.getItem('inspectionCompleted') === 'true'
+
   const [showCustomerCard, setShowCustomerCard] = useState(
     !fromPayment && !customerCardAsked && !inspectionCompleted
   )
-  const [inspectionSelected, setInspectionSelected] = useState(false)
+
+  const [inspectionActive, setInspectionActive] = useState(
+    sessionStorage.getItem('inspectionActive') === 'true'
+  )
+
   const handleContinueToPayment = () => {
-    if (!inspectionCompleted && !inspectionSelected) {
-      if (Math.random() < 0.8) {
-        setInspectionSelected(true)
+    if (!inspectionCompleted && !inspectionActive) {
+      if (Math.random() < 0.5) {
+        setInspectionActive(true)
         sessionStorage.setItem('inspectionActive', 'true')
+        window.dispatchEvent(new Event('inspectionStatusChanged'))
         return
       }
     }
     navigate('/payment')
   }
+
   const handleCustomerCardYes = () => {
     sessionStorage.setItem('customerCardAsked', 'true')
     sessionStorage.setItem('pendingCustomerCard', 'true')
@@ -46,7 +54,7 @@ export default function SummaryPage() {
               <h2 className="text-xl font-bold text-gray-800 mb-2">Kontrolle vorbei!</h2>
               <p className="text-sm text-gray-600">Sie können nun zur Zahlung fortfahren.</p>
             </>
-          ) : inspectionSelected ? (
+          ) : inspectionActive ? (
             <>
               <div className="flex justify-center mb-3">
                 <img src={WarningIcon} alt="Warnung" className="w-32 h-32 object-contain" />
@@ -69,7 +77,7 @@ export default function SummaryPage() {
             </>
           )}
         </div>
-        {(!inspectionSelected || inspectionCompleted) && (
+        {(!inspectionActive || inspectionCompleted) && (
           <div className="flex gap-4 justify-center">
             {!inspectionCompleted && (
               <button

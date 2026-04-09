@@ -62,9 +62,9 @@ async function setColor(colour) {
 
 /**
  * Set the bulb to a specific HSL color.
- * @param {number} hue 
- * @param {number} saturation 
- * @param {number} luminance 
+ * @param {number} hue
+ * @param {number} saturation
+ * @param {number} luminance
  */
 async function setHSL(hue, saturation, luminance) {
   const device = await connectBulb()
@@ -106,7 +106,7 @@ async function flashGreen(duration = 2000) {
 
 /**
  * for unsuccessful scan -> flash the bulb red for a duration, then return to white
- * @param {number} duration 
+ * @param {number} duration
  */
 async function flashRed(duration = 2000) {
   try {

@@ -10,7 +10,8 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()
-  const scannedItems = location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
+  const scannedItems =
+    location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
 
   const items = useMemo(() => {
     return scannedItems.reduce((acc, item) => {

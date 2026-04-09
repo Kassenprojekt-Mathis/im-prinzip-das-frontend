@@ -18,9 +18,12 @@ let currentPrinterName = 'GEZHI_micro_printer'
 
 function sanitize(text) {
   return text
-    .replace(/ä/g, 'ae').replace(/Ä/g, 'Ae')
-    .replace(/ö/g, 'oe').replace(/Ö/g, 'Oe')
-    .replace(/ü/g, 'ue').replace(/Ü/g, 'Ue')
+    .replace(/ä/g, 'ae')
+    .replace(/Ä/g, 'Ae')
+    .replace(/ö/g, 'oe')
+    .replace(/Ö/g, 'Oe')
+    .replace(/ü/g, 'ue')
+    .replace(/Ü/g, 'Ue')
     .replace(/ß/g, 'ss')
 }
 
@@ -78,15 +81,10 @@ function printReceipt(receiptData) {
 
       const builder = new POSReceiptBuilder()
 
-      const catLines = [
-        '  /\\_/\\ ',
-        ' ( o . o )',
-      ]
+      const catLines = ['  /\\_/\\ ', ' ( o . o )']
       for (const catLine of catLines) {
         builder.addComponent(
-          new POSTextBuilder(catLine)
-            .setAlignment(POSTextAlignment.CENTER)
-            .build()
+          new POSTextBuilder(catLine).setAlignment(POSTextAlignment.CENTER).build()
         )
       }
       builder.addFeed()
@@ -121,7 +119,7 @@ function printReceipt(receiptData) {
         let remaining = text
         while (remaining.length > maxWidth) {
           let breakAt = remaining.lastIndexOf(' ', maxWidth)
-          if (breakAt <= 0) breakAt = maxWidth 
+          if (breakAt <= 0) breakAt = maxWidth
           lines.push(remaining.substring(0, breakAt))
           remaining = remaining.substring(breakAt).trimStart()
         }
@@ -147,9 +145,7 @@ function printReceipt(receiptData) {
 
             for (let i = 0; i < nameLines.length - 1; i++) {
               builder.addComponent(
-                new POSTextBuilder(nameLines[i])
-                  .setAlignment(POSTextAlignment.LEFT)
-                  .build()
+                new POSTextBuilder(nameLines[i]).setAlignment(POSTextAlignment.LEFT).build()
               )
             }
 
@@ -218,20 +214,14 @@ function printReceipt(receiptData) {
           .build()
       )
       builder.addComponent(
-        new POSTextBuilder('Mo-Sa: 06:00 - 22:00 Uhr')
-          .setAlignment(POSTextAlignment.CENTER)
-          .build()
+        new POSTextBuilder('Mo-Sa: 06:00 - 22:00 Uhr').setAlignment(POSTextAlignment.CENTER).build()
       )
       builder.addFeed()
       builder.addComponent(
-        new POSTextBuilder('Sie haben Fragen?')
-          .setAlignment(POSTextAlignment.CENTER)
-          .build()
+        new POSTextBuilder('Sie haben Fragen?').setAlignment(POSTextAlignment.CENTER).build()
       )
       builder.addComponent(
-        new POSTextBuilder('Antworten gibt es unter')
-          .setAlignment(POSTextAlignment.CENTER)
-          .build()
+        new POSTextBuilder('Antworten gibt es unter').setAlignment(POSTextAlignment.CENTER).build()
       )
       builder.addComponent(
         new POSTextBuilder('www.q&a-im-prinzip.de')

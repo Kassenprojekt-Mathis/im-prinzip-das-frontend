@@ -7,6 +7,7 @@ import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
 import ScannerIcon from '../assets/Icons/Scanner.png'
 import BarcodeIcon from '../assets/Icons/Barcode.png'
+import WarningIcon from '../assets/Icons/Warning.png'
 
 export default function ScanPage() {
   const navigate = useNavigate()
@@ -14,6 +15,15 @@ export default function ScanPage() {
   const barcodeRef = useRef(null)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
+
+  // State für Alterskontrolle
+  const [ageControlActive, setAgeControlActive] = useState(
+    sessionStorage.getItem('ageControlActive') === 'true'
+  )
+  const [pendingAgeProduct, setPendingAgeProduct] = useState(() => {
+    const stored = sessionStorage.getItem('pendingAgeProduct')
+    return stored ? JSON.parse(stored) : null
+  })
 
   // Einzige geordnete Liste aller Artikel (manuelle + Barcode)
   // Jeder Eintrag: { type: 'manual', id, name, price } oder { type: 'barcode', barcode, name, price, discount }
@@ -34,7 +44,10 @@ export default function ScanPage() {
   }, {})
 
   const focusBarcodeInput = useCallback(() => {
-    if (barcodeRef.current) {
+    // Nicht fokussieren wenn ein Modal aktiv ist
+    const modalOpen = sessionStorage.getItem('modalOpen') === 'true'
+
+    if (barcodeRef.current && !modalOpen) {
       barcodeRef.current.focus()
     }
   }, [])
@@ -58,7 +71,7 @@ export default function ScanPage() {
       { id: 1, name: 'Apfel' },
       { id: 2, name: 'Banane' },
       { id: 3, name: 'Kiwi' },
-      { id: 4, name: 'Traube' },
+      { id: 4, name: 'Traube (Wein)', mindestalter: 16 },
       { id: 5, name: 'Pfirsich' },
       { id: 6, name: 'Kirsche' }
     ],
@@ -126,6 +139,34 @@ export default function ScanPage() {
       .flat()
       .find((p) => p.id === id)
     if (!product) return
+
+    // Age Control Check - nur beim ersten altersbeschränkten Produkt
+    const ageControlCompleted = sessionStorage.getItem('ageControlCompleted') === 'true'
+    if (product.mindestalter && product.mindestalter >= 16) {
+      if (!ageControlCompleted) {
+        // Erste Kontrolle - warten auf Mitarbeiter
+        setAgeControlActive(true)
+        setPendingAgeProduct(product)
+        sessionStorage.setItem('ageControlActive', 'true')
+        sessionStorage.setItem('pendingAgeProduct', JSON.stringify(product))
+        //Item wird nach der erfolgreichen Kontrolle hinzugefügt
+        return
+      }
+      // Kontrolle bereits abgeschlossen - direkt hinzufügen
+      setCartItemsList((prev) => [
+        ...prev,
+        {
+          type: 'manual',
+          id: product.id,
+          name: product.name,
+          price: 0,
+          mindestalter: product.mindestalter
+        }
+      ])
+      setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
+      return
+    }
+
     setCartItemsList((prev) => [
       ...prev,
       { type: 'manual', id: product.id, name: product.name, price: 0 }
@@ -186,6 +227,23 @@ export default function ScanPage() {
     window.dispatchEvent(new Event('cartUpdated'))
   }, [cartItemsList])
 
+  useEffect(() => {
+    const handleAgeControlUpdate = () => {
+      setAgeControlActive(sessionStorage.getItem('ageControlActive') === 'true')
+      const stored = sessionStorage.getItem('pendingAgeProduct')
+      setPendingAgeProduct(stored ? JSON.parse(stored) : null)
+
+      // cartItemsList neu laden nach Alterskontrolle
+      const cartStored = sessionStorage.getItem('cartItemsList')
+      if (cartStored) {
+        setCartItemsList(JSON.parse(cartStored))
+      }
+    }
+
+    window.addEventListener('ageControlStatusChanged', handleAgeControlUpdate)
+    return () => window.removeEventListener('ageControlStatusChanged', handleAgeControlUpdate)
+  }, [])
+
   const hasItems = cartItemsList.length > 0
 
   const handleNavigateToSummary = () => {
@@ -196,6 +254,7 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Barcode Input - deaktiviert während Alterskontrolle */}
       <input
         ref={barcodeRef}
         autoFocus
@@ -205,9 +264,10 @@ export default function ScanPage() {
         onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
         onBlur={() => setTimeout(focusBarcodeInput, 50)}
         placeholder="Barcode eingeben..."
+        disabled={ageControlActive}
         className={
           devMode
-            ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B]'
+            ? 'mb-2 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E1B4B] disabled:opacity-50 disabled:cursor-not-allowed'
             : 'absolute opacity-0 pointer-events-none'
         }
       />
@@ -248,100 +308,120 @@ export default function ScanPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {categories.map((cat) => (
-          <button
-            key={cat.name}
-            onClick={() => setActiveCategory(cat.name)}
-            className={`h-28 rounded-xl flex flex-col items-center justify-center text-xl font-bold border-4 transition
-              ${
-                activeCategory === cat.name
-                  ? 'bg-[#7C83FD] text-white border-[#6C72E8]' //true
-                  : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]' //false
-              }
-            `}
-          >
-            <img src={cat.img} className="h-10 mb-2 object-contain" />
-            {cat.name.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      {activeCategory === null ? (
+      {ageControlActive ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <div className="flex justify-center items-end gap-12 mb-8">
-            <img src={BarcodeIcon} alt="Barcode" className="w-24 h-24 object-contain" />
-            <img
-              src={ScannerIcon}
-              alt="Scanner"
-              className="w-40 h-40 object-contain"
-              style={{ transform: 'rotate(-25deg) translateY(-20px)' }}
-            />
-          </div>
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-3 text-gray-800">Herzlich Willkommen!</h1>
-            <p className="text-xl text-gray-700">
-              Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
+            <div className="flex justify-center mb-4">
+              <img src={WarningIcon} alt="Warnung" className="w-32 h-32 object-contain" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Altersprüfung erforderlich</h2>
+            {pendingAgeProduct && (
+              <p className="text-xl text-gray-700 mb-2">
+                <strong>{pendingAgeProduct.name}</strong>
+              </p>
+            )}
+            <p className="text-lg text-gray-700 mb-4">
+              Ein Mitarbeiter muss Ihren gescannten Artikel kontrollieren.
             </p>
           </div>
         </div>
       ) : (
         <>
-          {/* Produkte --> überarbeiten sobald Backend Anbindung steht*/}
-
-          <div className="grid grid-cols-3 gap-6 flex-1">
-            {products[activeCategory].map((item) => (
-              <div
-                key={item.id}
-                className="bg-[#E9EAF1] rounded-xl p-4 flex flex-col items-center justify-between shadow-sm"
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            {categories.map((cat) => (
+              <button
+                key={cat.name}
+                onClick={() => setActiveCategory(cat.name)}
+                className={`h-28 rounded-xl flex flex-col items-center justify-center text-xl font-bold border-4 transition
+                  ${
+                    activeCategory === cat.name
+                      ? 'bg-[#7C83FD] text-white border-[#6C72E8]' //true
+                      : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]' //false
+                  }
+                `}
               >
-                {/* Counter */}
-
-                <div className="flex items-center gap-4 text-xl font-bold">
-                  <button
-                    onClick={() => decrease(item.id)}
-                    className="px-3 py-1 bg-white rounded shadow active:scale-95"
-                  >
-                    -
-                  </button>
-
-                  <span>{counts[item.id] || 0}</span>
-
-                  <button
-                    onClick={() => increase(item.id)}
-                    className="px-3 py-1 bg-white rounded shadow active:scale-95"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Name */}
-
-                <span className="text-lg font-bold mt-2"> {item.name} </span>
-              </div>
+                <img src={cat.img} className="h-10 mb-2 object-contain" />
+                {cat.name.toUpperCase()}
+              </button>
             ))}
           </div>
-        </>
-      )}
 
-      {/* Buttons – sichtbar sobald Items vorhanden, unabhängig von Kategorie */}
-      {hasItems && (
-        <div className="flex justify-between mt-6 gap-4">
-          <button
-            onClick={resetLast}
-            className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors"
-            style={{ backgroundColor: '#E1E1F2' }}
-          >
-            Letzten Artikel löschen
-          </button>
-          <button
-            onClick={handleNavigateToSummary}
-            className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
-            style={{ backgroundColor: '#948BB8' }}
-          >
-            Weiter zur Zusammenfassung →
-          </button>
-        </div>
+          {activeCategory === null ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="flex justify-center items-end gap-12 mb-8">
+                <img src={BarcodeIcon} alt="Barcode" className="w-24 h-24 object-contain" />
+                <img
+                  src={ScannerIcon}
+                  alt="Scanner"
+                  className="w-40 h-40 object-contain"
+                  style={{ transform: 'rotate(-25deg) translateY(-20px)' }}
+                />
+              </div>
+              <div className="text-center">
+                <h1 className="text-4xl font-bold mb-3 text-gray-800">Herzlich Willkommen!</h1>
+                <p className="text-xl text-gray-700">
+                  Bitte scannen Sie Ihre Artikel aus dem Warenkorb ein.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Produkte --> überarbeiten sobald Backend Anbindung steht*/}
+
+              <div className="grid grid-cols-3 gap-6 flex-1">
+                {products[activeCategory].map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-[#E9EAF1] rounded-xl p-4 flex flex-col items-center justify-between shadow-sm"
+                  >
+                    {/* Counter */}
+
+                    <div className="flex items-center gap-4 text-xl font-bold">
+                      <button
+                        onClick={() => decrease(item.id)}
+                        className="px-3 py-1 bg-white rounded shadow active:scale-95"
+                      >
+                        -
+                      </button>
+
+                      <span>{counts[item.id] || 0}</span>
+
+                      <button
+                        onClick={() => increase(item.id)}
+                        className="px-3 py-1 bg-white rounded shadow active:scale-95"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Name */}
+
+                    <span className="text-lg font-bold mt-2"> {item.name} </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {hasItems && !ageControlActive && (
+            <div className="flex justify-between mt-6 gap-4">
+              <button
+                onClick={resetLast}
+                className="px-8 py-3 text-gray-700 font-semibold rounded-lg transition-colors"
+                style={{ backgroundColor: '#E1E1F2' }}
+              >
+                Letzten Artikel löschen
+              </button>
+              <button
+                onClick={handleNavigateToSummary}
+                className="px-8 py-3 text-white font-semibold rounded-lg transition-colors"
+                style={{ backgroundColor: '#948BB8' }}
+              >
+                Weiter zur Zusammenfassung →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

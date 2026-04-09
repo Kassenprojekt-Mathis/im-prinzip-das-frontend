@@ -2,12 +2,20 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
+import { categoryApi } from '../api/categoryAPI'
+import { productApi } from '../api/productAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
 import ScannerIcon from '../assets/Icons/Scanner.png'
 import BarcodeIcon from '../assets/Icons/Barcode.png'
 import WarningIcon from '../assets/Icons/Warning.png'
+
+const categoryImages = {
+  Obst: apfel,
+  Gemüse: karotte,
+  Backwaren: croissant
+}
 
 export default function ScanPage() {
   const navigate = useNavigate()
@@ -58,34 +66,17 @@ export default function ScanPage() {
     return () => clearTimeout(timer)
   }, [focusBarcodeInput])
 
-  const categories = [
-    { name: 'Obst', img: apfel },
-    { name: 'Gemüse', img: karotte },
-    { name: 'Backwaren', img: croissant }
-  ]
+  const [kategorien, setKategorien] = useState([])
+  const [aktiveProdukteList, setAktiveProdukteList] = useState([])
 
-  //MockDaten zum Testen
-
-  const products = {
-    Obst: [
-      { id: 1, name: 'Apfel' },
-      { id: 2, name: 'Banane' },
-      { id: 3, name: 'Kiwi' },
-      { id: 4, name: 'Traube (Wein)', mindestalter: 16 },
-      { id: 5, name: 'Pfirsich' },
-      { id: 6, name: 'Kirsche' }
-    ],
-    Gemüse: [
-      { id: 7, name: 'Karotte' },
-      { id: 8, name: 'Brokkoli' },
-      { id: 9, name: 'Tomate' }
-    ],
-    Backwaren: [
-      { id: 10, name: 'Croissant' },
-      { id: 11, name: 'Brötchen' },
-      { id: 12, name: 'Baguette' }
-    ]
-  }
+  useEffect(() => {
+    const anzeigeKategorien = ['Obst', 'Gemüse', 'Backwaren']
+    categoryApi
+      .getAllCategories()
+      .then((alle) => alle.filter((k) => anzeigeKategorien.includes(k.bezeichnung)))
+      .then(setKategorien)
+      .catch(console.error)
+  }, [])
 
   const handleBarcodeScan = async () => {
     if (!barcodeInput.trim()) return
@@ -134,10 +125,16 @@ export default function ScanPage() {
 
   const [activeCategory, setActiveCategory] = useState(null)
 
+  useEffect(() => {
+    if (!activeCategory) return
+    productApi
+      .getProductsByCategory(activeCategory.id)
+      .then(setAktiveProdukteList)
+      .catch(console.error)
+  }, [activeCategory])
+
   const increase = (id) => {
-    const product = Object.values(products)
-      .flat()
-      .find((p) => p.id === id)
+    const product = aktiveProdukteList.find((p) => p.id === id)
     if (!product) return
 
     // Age Control Check - nur beim ersten altersbeschränkten Produkt
@@ -159,7 +156,7 @@ export default function ScanPage() {
           type: 'manual',
           id: product.id,
           name: product.name,
-          price: 0,
+          price: product.preis || 0,
           mindestalter: product.mindestalter
         }
       ])
@@ -169,7 +166,7 @@ export default function ScanPage() {
 
     setCartItemsList((prev) => [
       ...prev,
-      { type: 'manual', id: product.id, name: product.name, price: 0 }
+      { type: 'manual', id: product.id, name: product.name, price: product.preis || 0 }
     ])
     setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
@@ -328,20 +325,22 @@ export default function ScanPage() {
       ) : (
         <>
           <div className="grid grid-cols-3 gap-4 mb-6">
-            {categories.map((cat) => (
+            {kategorien.map((kat) => (
               <button
-                key={cat.name}
-                onClick={() => setActiveCategory(cat.name)}
+                key={kat.id}
+                onClick={() => setActiveCategory(kat)}
                 className={`h-28 rounded-xl flex flex-col items-center justify-center text-xl font-bold border-4 transition
                   ${
-                    activeCategory === cat.name
-                      ? 'bg-[#7C83FD] text-white border-[#6C72E8]' //true
-                      : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]' //false
+                    activeCategory?.id === kat.id
+                      ? 'bg-[#7C83FD] text-white border-[#6C72E8]'
+                      : 'bg-[#D9DADD] text-[#4A4A68] border-[#C9CAD1] hover:bg-[#cfd0d4]'
                   }
                 `}
               >
-                <img src={cat.img} className="h-10 mb-2 object-contain" />
-                {cat.name.toUpperCase()}
+                {categoryImages[kat.bezeichnung] && (
+                  <img src={categoryImages[kat.bezeichnung]} className="h-10 mb-2 object-contain" />
+                )}
+                {kat.bezeichnung.toUpperCase()}
               </button>
             ))}
           </div>
@@ -366,10 +365,10 @@ export default function ScanPage() {
             </div>
           ) : (
             <>
-              {/* Produkte --> überarbeiten sobald Backend Anbindung steht*/}
+              {/* Produkte vom Backend */}
 
               <div className="grid grid-cols-3 gap-6 flex-1">
-                {products[activeCategory].map((item) => (
+                {aktiveProdukteList.map((item) => (
                   <div
                     key={item.id}
                     className="bg-[#E9EAF1] rounded-xl p-4 flex flex-col items-center justify-between shadow-sm"

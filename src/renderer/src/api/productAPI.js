@@ -73,5 +73,13 @@ export const productApi = {
       throw new Error(result.error || 'Fehler beim Aktualisieren des Produkts')
     }
     return result
+  },
+
+  async getProductsByCategory(categoryId) {
+    const response = await fetch(`${API_BASE_URL}/api/produkt/kategorie/${categoryId}`)
+    if (!response.ok) {
+      throw new Error('Fehler beim Laden der Produkte nach Kategorie')
+    }
+    return await response.json()
   }
 }

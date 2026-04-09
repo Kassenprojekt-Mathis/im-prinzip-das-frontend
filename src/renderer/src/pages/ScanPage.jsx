@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
-import { kategorieApi } from '../api/kategorieAPI'
-import { produktApi } from '../api/produktAPI'
+import { categoryApi } from '../api/categoryAPI'
+import { productApi } from '../api/productAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -71,8 +71,8 @@ export default function ScanPage() {
 
   useEffect(() => {
     const anzeigeKategorien = ['Obst', 'Gemüse', 'Backwaren']
-    kategorieApi
-      .getAlleKategorien()
+    categoryApi
+      .getAllCategories()
       .then((alle) => alle.filter((k) => anzeigeKategorien.includes(k.bezeichnung)))
       .then(setKategorien)
       .catch(console.error)
@@ -127,8 +127,8 @@ export default function ScanPage() {
 
   useEffect(() => {
     if (!activeCategory) return
-    produktApi
-      .getProdukteNachKategorie(activeCategory.id)
+    productApi
+      .getProductsByCategory(activeCategory.id)
       .then(setAktiveProdukteList)
       .catch(console.error)
   }, [activeCategory])

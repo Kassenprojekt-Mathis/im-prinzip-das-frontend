@@ -297,7 +297,7 @@ export default function CheckoutLayout() {
       <main
         className="flex-1 grid gap-6"
         style={{
-          gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr',
+          gridTemplateColumns: isSummary ? '3fr 2fr' : '2fr 1fr',
           transition: 'grid-template-columns 300ms ease'
         }}
       >

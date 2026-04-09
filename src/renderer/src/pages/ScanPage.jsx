@@ -205,7 +205,7 @@ export default function ScanPage() {
   const getScannedItems = () => {
     return cartItemsList.map((item) => {
       if (item.type === 'manual') {
-        return { name: item.name, id: item.id, price: 0, quantity: 1 }
+        return { name: item.name, id: item.id, price: item.price || 0, quantity: 1 }
       }
       return {
         barcode: item.barcode,
@@ -393,9 +393,10 @@ export default function ScanPage() {
                       </button>
                     </div>
 
-                    {/* Name */}
+                    {/* Name + Preis */}
 
                     <span className="text-lg font-bold mt-2"> {item.name} </span>
+                    <span className="text-sm text-gray-600">{(item.preis || 0).toFixed(2)} €</span>
                   </div>
                 ))}
               </div>

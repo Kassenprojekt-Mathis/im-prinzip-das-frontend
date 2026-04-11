@@ -157,6 +157,7 @@ export default function ScanPage() {
           id: product.id,
           name: product.name,
           price: product.preis || 0,
+          discount: product.rabatt || null,
           mindestalter: product.mindestalter
         }
       ])
@@ -166,7 +167,13 @@ export default function ScanPage() {
 
     setCartItemsList((prev) => [
       ...prev,
-      { type: 'manual', id: product.id, name: product.name, price: product.preis || 0 }
+      {
+        type: 'manual',
+        id: product.id,
+        name: product.name,
+        price: product.preis || 0,
+        discount: product.rabatt || null
+      }
     ])
     setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
   }
@@ -205,7 +212,13 @@ export default function ScanPage() {
   const getScannedItems = () => {
     return cartItemsList.map((item) => {
       if (item.type === 'manual') {
-        return { name: item.name, id: item.id, price: item.price || 0, quantity: 1 }
+        return {
+          name: item.name,
+          id: item.id,
+          price: item.price || 0,
+          discount: item.discount || null,
+          quantity: 1
+        }
       }
       return {
         barcode: item.barcode,

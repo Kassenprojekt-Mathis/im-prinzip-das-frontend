@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ecoApi } from '../api/ecoApi'
+import { useVoucher } from '../hooks/useVoucher'
 import CustomerCardModal from '../components/CustomerCardModal'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
 import HandsIcon from '../assets/Icons/Hands.png'
@@ -16,68 +16,12 @@ export default function SummaryPage() {
   const [showCustomerCard, setShowCustomerCard] = useState(
     !fromPayment && !customerCardAsked && !inspectionCompleted
   )
-
   const [inspectionActive, setInspectionActive] = useState(
     sessionStorage.getItem('inspectionActive') === 'true'
   )
 
-  const [voucherCode, setVoucherCode] = useState('')
-  const [voucherStatus, setVoucherStatus] = useState(null) // { type: 'success'|'error', message }
-  const [appliedVoucher, setAppliedVoucher] = useState(() => {
-    const stored = sessionStorage.getItem('appliedVoucher')
-    return stored ? JSON.parse(stored) : null
-  })
-
-  const getCartTotal = () => {
-    const cartItems = JSON.parse(sessionStorage.getItem('cartItems') || '[]')
-    return cartItems.reduce((sum, item) => {
-      const itemTotal = (item.price || 0) * (item.quantity || 1)
-      const itemDiscount = (item.discount?.amount || 0) * (item.quantity || 1)
-      return sum + itemTotal - itemDiscount
-    }, 0)
-  }
-
-  const handleApplyVoucher = async () => {
-    const code = voucherCode.trim().toUpperCase()
-    if (!code) return
-    setVoucherStatus(null)
-
-    try {
-      const total = getCartTotal()
-      await ecoApi.validateGutschein(code, total)
-      const gutschein = await ecoApi.getGutscheinByCode(code)
-
-      const discountAmount = gutschein.ist_prozentual
-        ? total * (parseFloat(gutschein.wert) / 100)
-        : parseFloat(gutschein.wert)
-
-      const voucher = {
-        code: gutschein.code,
-        id: gutschein.id,
-        wert: gutschein.wert,
-        ist_prozentual: gutschein.ist_prozentual,
-        discountAmount: Math.min(discountAmount, total)
-      }
-
-      sessionStorage.setItem('appliedVoucher', JSON.stringify(voucher))
-      setAppliedVoucher(voucher)
-      setVoucherCode('')
-      setVoucherStatus({
-        type: 'success',
-        message: `Gutschein eingelöst: -${voucher.discountAmount.toFixed(2).replace('.', ',')} EUR`
-      })
-      window.dispatchEvent(new Event('cartUpdated'))
-    } catch (err) {
-      setVoucherStatus({ type: 'error', message: err.message })
-    }
-  }
-
-  const handleRemoveVoucher = () => {
-    sessionStorage.removeItem('appliedVoucher')
-    setAppliedVoucher(null)
-    setVoucherStatus(null)
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
+  const { voucherCode, setVoucherCode, voucherStatus, appliedVoucher, applyVoucher, removeVoucher } =
+    useVoucher()
 
   const handleContinueToPayment = () => {
     if (!inspectionCompleted && !inspectionActive) {
@@ -150,7 +94,7 @@ export default function SummaryPage() {
                   </p>
                 </div>
                 <button
-                  onClick={handleRemoveVoucher}
+                  onClick={removeVoucher}
                   className="text-red-500 font-bold text-lg hover:text-red-700 ml-4"
                 >
                   ✕
@@ -162,12 +106,12 @@ export default function SummaryPage() {
                   type="text"
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                  onKeyDown={(e) => e.key === 'Enter' && applyVoucher()}
                   placeholder="Gutschein-Code eingeben"
                   className="flex-1 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
                 />
                 <button
-                  onClick={handleApplyVoucher}
+                  onClick={applyVoucher}
                   disabled={!voucherCode.trim()}
                   className="px-4 py-2 text-white text-sm font-semibold rounded-lg disabled:opacity-40"
                   style={{ backgroundColor: '#948BB8' }}

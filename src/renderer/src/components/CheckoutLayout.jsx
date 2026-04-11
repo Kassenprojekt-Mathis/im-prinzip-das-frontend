@@ -57,19 +57,21 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItems')
     const allItems = stored ? JSON.parse(stored) : []
 
-    const matchingItems = allItems.filter((item) => (item.barcode || item.name) === key)
-    const otherItems = allItems.filter((item) => (item.barcode || item.name) !== key)
+    const firstIndex = allItems.findIndex((item) => (item.barcode || item.name) === key)
+    if (firstIndex === -1) return
 
-    if (matchingItems.length === 0) return
-
-    const template = { ...matchingItems[0], quantity: 1 }
+    const template = { ...allItems[firstIndex], quantity: 1 }
 
     const newItems = []
     for (let i = 0; i < newQuantity; i++) {
       newItems.push({ ...template })
     }
 
-    const updatedCart = [...otherItems, ...newItems]
+    // Items vor dem ersten Match (die nicht matchen) + neue Items + Items nach dem ersten Match (die nicht matchen)
+    const before = allItems.slice(0, firstIndex)
+    const after = allItems.slice(firstIndex).filter((item) => (item.barcode || item.name) !== key)
+
+    const updatedCart = [...before, ...newItems, ...after]
     sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
 
     updateCartItemsList(key, newQuantity)
@@ -95,28 +97,27 @@ export default function CheckoutLayout() {
 
     const list = JSON.parse(stored)
 
-    const matchingIndices = []
-    list.forEach((item, i) => {
-      const itemKey = item.barcode || item.name
-      if (itemKey === key) matchingIndices.push(i)
-    })
-
-    if (matchingIndices.length === 0) return
+    const firstIndex = list.findIndex((item) => (item.barcode || item.name) === key)
+    if (firstIndex === -1) return
 
     if (newQuantity === 0) {
-      const updated = list.filter((_, i) => !matchingIndices.includes(i))
+      const updated = list.filter((item) => (item.barcode || item.name) !== key)
       sessionStorage.setItem('cartItemsList', JSON.stringify(updated))
       return
     }
 
-    const template = { ...list[matchingIndices[0]] }
-    const otherItems = list.filter((_, i) => !matchingIndices.includes(i))
+    const template = { ...list[firstIndex] }
 
+    const newItems = []
     for (let i = 0; i < newQuantity; i++) {
-      otherItems.push({ ...template })
+      newItems.push({ ...template })
     }
 
-    sessionStorage.setItem('cartItemsList', JSON.stringify(otherItems))
+    // Reihenfolge beibehalten: Items vor dem ersten Match + neue Items + Items nach dem ersten Match (ohne Matches)
+    const before = list.slice(0, firstIndex)
+    const after = list.slice(firstIndex).filter((item) => (item.barcode || item.name) !== key)
+
+    sessionStorage.setItem('cartItemsList', JSON.stringify([...before, ...newItems, ...after]))
   }
 
   const isActive = (path) => location.pathname.includes(path)

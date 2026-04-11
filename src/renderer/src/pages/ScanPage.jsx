@@ -205,7 +205,7 @@ export default function ScanPage() {
   const getScannedItems = () => {
     return cartItemsList.map((item) => {
       if (item.type === 'manual') {
-        return { name: item.name, id: item.id, price: 0, quantity: 1 }
+        return { name: item.name, id: item.id, price: item.price || 0, quantity: 1 }
       }
       return {
         barcode: item.barcode,

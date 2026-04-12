@@ -1,19 +1,14 @@
 import Modal from './Modal'
 import PropTypes from 'prop-types'
 
-export default function AgeVerificationModal({ isOpen, onYes, onNo, productName, mindestalter }) {
-  // Berechne das späteste Geburtsdatum (heute minus Mindestalter)
-  const getMaxBirthDate = () => {
-    if (!mindestalter) return null
-    const today = new Date()
-    const maxDate = new Date(today.getFullYear() - mindestalter, today.getMonth(), today.getDate())
-    return maxDate.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
-  }
-
+export default function AgeVerificationModal({
+  isOpen,
+  onYes,
+  onNo,
+  productName,
+  mindestalter,
+  maxBirthDate
+}) {
   return (
     <Modal isOpen={isOpen}>
       <div className="text-center">
@@ -27,7 +22,7 @@ export default function AgeVerificationModal({ isOpen, onYes, onNo, productName,
               Erforderliches Mindestalter: <strong>{mindestalter} Jahre</strong>
             </p>
             <p className="text-lg text-gray-600 mt-1">
-              Geboren am oder vor: <strong>{getMaxBirthDate()}</strong>
+              Geboren am oder vor: <strong>{maxBirthDate}</strong>
             </p>
           </div>
         )}
@@ -62,5 +57,6 @@ AgeVerificationModal.propTypes = {
   onYes: PropTypes.func.isRequired,
   onNo: PropTypes.func.isRequired,
   productName: PropTypes.string,
-  mindestalter: PropTypes.number
+  mindestalter: PropTypes.number,
+  maxBirthDate: PropTypes.string
 }

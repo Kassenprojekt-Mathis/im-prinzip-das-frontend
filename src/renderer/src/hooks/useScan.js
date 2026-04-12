@@ -10,8 +10,18 @@ import {
   getScannedItems,
   buildBarcodeCartItem,
   buildManualCartItem,
-  buildPendingAgeProduct
+  buildPendingAgeProduct,
+  readAgeControlActive,
+  readPendingAgeProductFromStorage,
+  readCartItemsListFromStorage,
+  isPendingCustomerCard,
+  readVerifiedAge,
+  setCustomerData,
+  clearPendingCustomerCard,
+  setPendingAgeControl,
+  syncCartToStorage
 } from '../models/scanModel'
+import { readModalOpen } from '../models/checkoutModel'
 
 export function useScan() {
   const navigate = useNavigate()
@@ -19,17 +29,9 @@ export function useScan() {
 
   const [barcodeInput, setBarcodeInput] = useState('')
   const [scanStatus, setScanStatus] = useState(null)
-  const [ageControlActive, setAgeControlActive] = useState(
-    sessionStorage.getItem('ageControlActive') === 'true'
-  )
-  const [pendingAgeProduct, setPendingAgeProduct] = useState(() => {
-    const stored = sessionStorage.getItem('pendingAgeProduct')
-    return stored ? JSON.parse(stored) : null
-  })
-  const [cartItemsList, setCartItemsList] = useState(() => {
-    const stored = sessionStorage.getItem('cartItemsList')
-    return stored ? JSON.parse(stored) : []
-  })
+  const [ageControlActive, setAgeControlActive] = useState(readAgeControlActive)
+  const [pendingAgeProduct, setPendingAgeProduct] = useState(readPendingAgeProductFromStorage)
+  const [cartItemsList, setCartItemsList] = useState(readCartItemsListFromStorage)
   const [helpModalOpen, setHelpModalOpen] = useState(false)
   const [kategorien, setKategorien] = useState([])
   const [aktiveProdukteList, setAktiveProdukteList] = useState([])
@@ -71,17 +73,15 @@ export function useScan() {
 
   useEffect(() => {
     const allItems = getScannedItems(cartItemsList)
-    sessionStorage.setItem('cartItems', JSON.stringify(allItems))
-    sessionStorage.setItem('cartItemsList', JSON.stringify(cartItemsList))
+    syncCartToStorage(allItems, cartItemsList)
     window.dispatchEvent(new Event('cartUpdated'))
   }, [cartItemsList])
 
   useEffect(() => {
     const handleAgeControlUpdate = () => {
-      const isStillActive = sessionStorage.getItem('ageControlActive') === 'true'
+      const isStillActive = readAgeControlActive()
       setAgeControlActive(isStillActive)
-      const stored = sessionStorage.getItem('pendingAgeProduct')
-      setPendingAgeProduct(stored ? JSON.parse(stored) : null)
+      setPendingAgeProduct(readPendingAgeProductFromStorage())
 
       const cartStored = sessionStorage.getItem('cartItemsList')
       if (cartStored) {
@@ -102,13 +102,10 @@ export function useScan() {
     const trimmed = barcode.trim()
     setScanStatus(null)
 
-    if (sessionStorage.getItem('pendingCustomerCard') === 'true') {
+    if (isPendingCustomerCard()) {
       try {
         const kunde = await kundeApi.getKundeById(trimmed)
-        sessionStorage.removeItem('pendingCustomerCard')
-        sessionStorage.setItem('customerCard', String(kunde.id))
-        sessionStorage.setItem('customerName', `${kunde.vorname} ${kunde.name}`)
-        sessionStorage.setItem('customerEcopunkte', String(kunde.ecopunkte))
+        setCustomerData(kunde)
         window.dispatchEvent(new Event('cartUpdated'))
         setScanStatus({
           type: 'success',
@@ -116,7 +113,7 @@ export function useScan() {
         })
         window.api?.tapo?.flashGreen()
       } catch {
-        sessionStorage.removeItem('pendingCustomerCard')
+        clearPendingCustomerCard()
         setScanStatus({ type: 'error', message: `Kundenkarte nicht gefunden (ID: ${trimmed})` })
         window.api?.tapo?.flashRed()
       }
@@ -125,7 +122,7 @@ export function useScan() {
 
     try {
       const product = await scannerApi.sendBarcode(trimmed)
-      const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+      const verifiedAge = readVerifiedAge()
       if (
         product.mindestalter &&
         product.mindestalter >= 16 &&
@@ -134,8 +131,7 @@ export function useScan() {
         const pending = buildPendingAgeProduct(trimmed, product)
         setAgeControlActive(true)
         setPendingAgeProduct(pending)
-        sessionStorage.setItem('ageControlActive', 'true')
-        sessionStorage.setItem('pendingAgeProduct', JSON.stringify(pending))
+        setPendingAgeControl(pending)
         setScanStatus({
           type: 'warning',
           message: `Alterskontrolle für ${product.name} erforderlich`
@@ -158,13 +154,12 @@ export function useScan() {
     const product = aktiveProdukteList.find((p) => p.id === id)
     if (!product) return
 
-    const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+    const verifiedAge = readVerifiedAge()
     if (product.mindestalter && product.mindestalter >= 16) {
       if (product.mindestalter > verifiedAge) {
         setAgeControlActive(true)
         setPendingAgeProduct(product)
-        sessionStorage.setItem('ageControlActive', 'true')
-        sessionStorage.setItem('pendingAgeProduct', JSON.stringify(product))
+        setPendingAgeControl(product)
         return
       }
     }
@@ -209,6 +204,7 @@ export function useScan() {
     counts,
     hasItems,
     focusRequested,
+    isModalOpen: readModalOpen(),
     handleBarcodeScan,
     increase,
     decrease,

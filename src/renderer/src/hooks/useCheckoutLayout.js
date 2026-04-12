@@ -8,11 +8,18 @@ import {
   readCustomerFromStorage,
   readAppliedVoucher,
   readPendingAgeProduct,
+  readInspectionActive,
+  readAgeControlActiveFromStorage,
+  setModalOpen,
+  clearModalOpen,
+  setEmployeeAuthorized,
+  markInspectionComplete,
   updateCartInStorage,
   updateCartListInStorage,
   appendToCartList,
   updateVerifiedAge
 } from '../models/checkoutModel'
+import { calcMaxBirthDate } from '../models/scanModel'
 
 export function useCheckoutLayout() {
   const location = useLocation()
@@ -32,8 +39,8 @@ export function useCheckoutLayout() {
   const [appliedVoucher, setAppliedVoucher] = useState(readAppliedVoucher)
 
   const isSummary = location.pathname.includes('/summary')
-  const inspectionActive = sessionStorage.getItem('inspectionActive') === 'true'
-  const ageControlActive = sessionStorage.getItem('ageControlActive') === 'true'
+  const inspectionActive = readInspectionActive()
+  const ageControlActive = readAgeControlActiveFromStorage()
   const isActive = (path) => location.pathname.includes(path)
 
   const loadCart = useCallback(() => {
@@ -68,19 +75,19 @@ export function useCheckoutLayout() {
   }
 
   const handleLogoClick = () => {
-    sessionStorage.setItem('modalOpen', 'true')
+    setModalOpen()
     setShowLogin(true)
   }
 
   const handleLoginSuccess = () => {
     setShowLogin(false)
-    sessionStorage.removeItem('modalOpen')
+    clearModalOpen()
     setShowEmployeeMenu(true)
   }
 
   const handleLoginCancel = () => {
     setShowLogin(false)
-    sessionStorage.removeItem('modalOpen')
+    clearModalOpen()
   }
 
   const handleInspectionClick = () => {
@@ -96,7 +103,7 @@ export function useCheckoutLayout() {
 
   const handleProductsClick = () => {
     setShowEmployeeMenu(false)
-    sessionStorage.setItem('employeeAuthorized', 'true')
+    setEmployeeAuthorized()
     navigate('/products')
   }
 
@@ -111,8 +118,7 @@ export function useCheckoutLayout() {
 
   const handleInspectionVerificationYes = () => {
     setShowInspectionVerification(false)
-    sessionStorage.setItem('inspectionCompleted', 'true')
-    sessionStorage.removeItem('inspectionActive')
+    markInspectionComplete()
     window.dispatchEvent(new Event('inspectionStatusChanged'))
     navigate('/summary')
   }
@@ -125,8 +131,7 @@ export function useCheckoutLayout() {
 
   const handleInspectionAnpassen = () => {
     setShowInspectionFailed(false)
-    sessionStorage.removeItem('inspectionActive')
-    sessionStorage.setItem('inspectionCompleted', 'true')
+    markInspectionComplete()
     window.dispatchEvent(new Event('inspectionStatusChanged'))
     navigate('/scan')
   }
@@ -180,6 +185,7 @@ export function useCheckoutLayout() {
     customerName,
     appliedVoucher,
     pendingAgeProduct: readPendingAgeProduct(),
+    pendingAgeProductMaxBirthDate: calcMaxBirthDate(readPendingAgeProduct().mindestalter),
     showInspectionVerification,
     showInspectionFailed,
     showAgeVerification,

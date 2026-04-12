@@ -33,6 +33,35 @@ export function readPendingAgeProduct() {
   return stored ? JSON.parse(stored) : {}
 }
 
+export function readInspectionActive() {
+  return sessionStorage.getItem('inspectionActive') === 'true'
+}
+
+export function readAgeControlActiveFromStorage() {
+  return sessionStorage.getItem('ageControlActive') === 'true'
+}
+
+export function readModalOpen() {
+  return sessionStorage.getItem('modalOpen') === 'true'
+}
+
+export function setModalOpen() {
+  sessionStorage.setItem('modalOpen', 'true')
+}
+
+export function clearModalOpen() {
+  sessionStorage.removeItem('modalOpen')
+}
+
+export function setEmployeeAuthorized() {
+  sessionStorage.setItem('employeeAuthorized', 'true')
+}
+
+export function markInspectionComplete() {
+  sessionStorage.setItem('inspectionCompleted', 'true')
+  sessionStorage.removeItem('inspectionActive')
+}
+
 export function updateCartInStorage(key, newQuantity) {
   const items = readCartFromStorage().map((item) => ({ ...item, quantity: 1 }))
   sessionStorage.setItem('cartItems', JSON.stringify(replaceItemsByKey(items, key, newQuantity)))

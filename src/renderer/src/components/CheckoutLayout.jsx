@@ -90,6 +90,7 @@ export default function CheckoutLayout() {
             onNo={vm.handleAgeRejected}
             productName={vm.pendingAgeProduct.name}
             mindestalter={vm.pendingAgeProduct.mindestalter}
+            maxBirthDate={vm.pendingAgeProductMaxBirthDate}
           />
           <InspectionFailedModal
             isOpen={vm.showInspectionFailed}

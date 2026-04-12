@@ -1,6 +1,6 @@
 // ViewModel für Gutschein
 import { useState } from 'react'
-import { ecoApi } from '../api/ecoApi'
+import { ecoApi } from '../api/ecoAPI'
 
 export function useVoucher() {
   const [voucherCode, setVoucherCode] = useState('')

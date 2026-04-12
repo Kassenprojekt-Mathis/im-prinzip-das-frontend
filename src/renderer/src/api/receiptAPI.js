@@ -1,7 +1,7 @@
 const API_BASE_URL = 'http://localhost:8000'
 
-export const belegApi = {
-  async createBeleg({ kundeId, gesamtbetrag, gegebenesgeld, zahlungsmethode }) {
+export const receiptApi = {
+  async createReceipt({ kundeId, gesamtbetrag, gegebenesgeld, zahlungsmethode }) {
     const body = {
       gesamtbetrag,
       gegebenes_geld: gegebenesgeld,

@@ -9,7 +9,7 @@ import {
   printReceipt,
   printTestReceipt
 } from './printerService'
-import { flashGreen, flashRed, setColor, setHSL, turnOn, turnOff, getStatus } from './tapoService'
+import { flashGreen, flashRed, setBlue, setColor, setHSL, setWhite, turnOn, turnOff, getStatus } from './tapoService'
 
 function createWindow() {
   // Create the browser window.
@@ -89,6 +89,19 @@ app.whenReady().then(() => {
 
   ipcMain.handle('tapo:flashRed', async () => {
     return await flashRed()
+  })
+
+  ipcMain.handle('tapo:setBlue', async () => {
+    return await setBlue()
+  })
+
+  ipcMain.handle('tapo:setWhite', async () => {
+    try {
+      await setWhite()
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
   })
 
   ipcMain.handle('tapo:setColor', async (_event, colour) => {

@@ -6,6 +6,10 @@ export const tapoApi = {
   flashGreen: () => ipcRenderer.invoke('tapo:flashGreen'),
   /** Blinkt rot (bei Scan-Fehler) */
   flashRed: () => ipcRenderer.invoke('tapo:flashRed'),
+  /** Setzt die Lampe auf Blau (Hilfe-Anfrage) */
+  setBlue: () => ipcRenderer.invoke('tapo:setBlue'),
+  /** Setzt die Lampe auf Weiß (Reset nach Hilfe) */
+  setWhite: () => ipcRenderer.invoke('tapo:setWhite'),
   /** Setzt eine Farbe */
   setColor: (colour) => ipcRenderer.invoke('tapo:setColor', colour),
   /** Setzt eine HSL-Farbe */

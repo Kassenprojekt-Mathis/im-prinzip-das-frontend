@@ -125,6 +125,19 @@ async function flashRed(duration = 2000) {
   }
 }
 
+/**
+ * Set the bulb to blue (for help request) – stays on until manually reset
+ */
+async function setBlue() {
+  try {
+    await setColor('blue')
+    return { success: true }
+  } catch (err) {
+    console.error('Tapo setBlue Fehler:', err.message)
+    return { success: false, error: err.message }
+  }
+}
+
 async function turnOn() {
   try {
     const device = await connectBulb()
@@ -155,4 +168,4 @@ async function getStatus() {
   }
 }
 
-export { flashGreen, flashRed, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }
+export { flashGreen, flashRed, setBlue, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }

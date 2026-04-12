@@ -124,6 +124,7 @@ export default function CheckoutLayout() {
   const handleLoginSuccess = () => {
     setShowLogin(false)
     sessionStorage.removeItem('modalOpen')
+    window.api?.tapo?.setWhite()
     setShowEmployeeMenu(true)
   }
 
@@ -166,6 +167,7 @@ export default function CheckoutLayout() {
   }
 
   const handleHelp = () => {
+    window.api?.tapo?.setBlue()
     setShowHelpModal(true)
   }
 

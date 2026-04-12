@@ -136,6 +136,7 @@ export default function ScanPage() {
           discount: product.discount || null
         }))
         setScanStatus({ type: 'warning', message: `Alterskontrolle für ${product.name} erforderlich` })
+        window.api?.tapo?.setBlue()
         setBarcodeInput('')
         return
       }
@@ -155,7 +156,7 @@ export default function ScanPage() {
       window.api?.tapo?.flashGreen()
     } catch {
       setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) – Hilfe angefordert` })
-      window.api?.tapo?.flashRed()
+      window.api?.tapo?.setBlue()
       setHelpModalOpen(true)
     }
     setBarcodeInput('')
@@ -185,6 +186,7 @@ export default function ScanPage() {
         sessionStorage.setItem('ageControlActive', 'true')
         sessionStorage.setItem('pendingAgeProduct', JSON.stringify(product))
         //Item wird nach der erfolgreichen Kontrolle hinzugefügt
+        window.api?.tapo?.setBlue()
         return
       }
       // Kontrolle bereits abgeschlossen - direkt hinzufügen

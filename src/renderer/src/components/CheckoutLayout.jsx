@@ -132,6 +132,8 @@ export default function CheckoutLayout() {
   const handleLoginSuccess = () => {
     setShowLogin(false)
     sessionStorage.removeItem('modalOpen')
+    // Lampe zurück auf Weiß wenn Mitarbeiter sich anmeldet
+    window.api?.tapo?.setColor('white')
     setShowEmployeeMenu(true)
   }
 
@@ -175,6 +177,7 @@ export default function CheckoutLayout() {
 
   const handleHelp = () => {
     setShowHelpModal(true)
+    window.api?.tapo?.setBlue()
   }
 
   const handleHelpClose = () => {

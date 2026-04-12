@@ -29,6 +29,7 @@ export default function SummaryPage() {
         setInspectionActive(true)
         sessionStorage.setItem('inspectionActive', 'true')
         window.dispatchEvent(new Event('inspectionStatusChanged'))
+        window.api?.tapo?.setBlue()
         return
       }
     }

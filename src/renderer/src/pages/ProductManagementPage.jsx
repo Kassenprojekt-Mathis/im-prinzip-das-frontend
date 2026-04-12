@@ -28,6 +28,7 @@ export default function ProductManagementPage() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [searchProduct, setSearchProduct] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [idFromScan, setIdFromScan] = useState(false)
 
   const showMessage = (type, text, duration = 3000) => {
     setMessage({ type, text })
@@ -36,6 +37,7 @@ export default function ProductManagementPage() {
 
   const resetManualInput = () => {
     setManualInput(INITIAL_MANUAL_INPUT)
+    setIdFromScan(false)
   }
 
   const loadProducts = async () => {
@@ -74,6 +76,7 @@ export default function ProductManagementPage() {
     setManualInput({ ...INITIAL_MANUAL_INPUT, id: barcode })
     setActiveTab('manual')
     setBarcodeInput('')
+    setIdFromScan(true)
     showMessage('success', `Barcode ${barcode} als ID übernommen – bitte restliche Felder ausfüllen`)
   }
 
@@ -372,12 +375,12 @@ export default function ProductManagementPage() {
                       ID / Barcode *
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       value={manualInput.id}
                       onChange={(e) => setManualInput({ ...manualInput, id: e.target.value })}
                       placeholder="Barcode scannen oder ID eingeben"
                       required
-                      readOnly={!!manualInput.id}
+                      readOnly={idFromScan}
                       className={`w-full px-3 py-2 text-sm border-2 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8] ${
                         manualInput.id
                           ? 'border-green-400 bg-green-50 font-semibold'

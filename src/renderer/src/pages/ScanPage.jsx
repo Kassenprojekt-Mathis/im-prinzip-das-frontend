@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import HelpModal from '../components/HelpModal'
 import { useNavigate } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
@@ -43,6 +44,8 @@ export default function ScanPage() {
 
   // Action-History für Undo-Funktionalität
   const [actionHistory, setActionHistory] = useState([])
+
+  const [helpModalOpen, setHelpModalOpen] = useState(false)
 
   // Counts für die Produkt-Grid-Anzeige ableiten
   const counts = cartItemsList.reduce((acc, item) => {
@@ -151,16 +154,9 @@ export default function ScanPage() {
       setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
     } catch {
-      const item = {
-        type: 'barcode',
-        barcode,
-        name: `Unbekannt (${barcode})`,
-        price: 0
-      }
-      setCartItemsList((prev) => [...prev, item])
-      setActionHistory((prev) => [...prev, { type: 'barcode' }])
-      setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
+      setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) – Hilfe angefordert` })
       window.api?.tapo?.flashRed()
+      setHelpModalOpen(true)
     }
     setBarcodeInput('')
   }
@@ -306,6 +302,7 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col h-full">
+      <HelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
       {/* Barcode Input - deaktiviert während Alterskontrolle */}
       <input
         ref={barcodeRef}

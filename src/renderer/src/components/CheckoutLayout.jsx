@@ -211,7 +211,7 @@ export default function CheckoutLayout() {
         type: 'manual',
         id: pendingProduct.id,
         name: pendingProduct.name,
-        price: 0,
+        price: pendingProduct.preis || pendingProduct.price || 0,
         mindestalter: pendingProduct.mindestalter
       })
       sessionStorage.setItem('cartItemsList', JSON.stringify(cartList))

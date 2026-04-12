@@ -126,13 +126,20 @@ export function useScan() {
     try {
       const product = await scannerApi.sendBarcode(trimmed)
       const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
-      if (product.mindestalter && product.mindestalter >= 16 && product.mindestalter > verifiedAge) {
+      if (
+        product.mindestalter &&
+        product.mindestalter >= 16 &&
+        product.mindestalter > verifiedAge
+      ) {
         const pending = buildPendingAgeProduct(trimmed, product)
         setAgeControlActive(true)
         setPendingAgeProduct(pending)
         sessionStorage.setItem('ageControlActive', 'true')
         sessionStorage.setItem('pendingAgeProduct', JSON.stringify(pending))
-        setScanStatus({ type: 'warning', message: `Alterskontrolle für ${product.name} erforderlich` })
+        setScanStatus({
+          type: 'warning',
+          message: `Alterskontrolle für ${product.name} erforderlich`
+        })
         return
       }
 

@@ -7,21 +7,19 @@ export default function AgeVerificationModal({ isOpen, onYes, onNo, productName,
     if (!mindestalter) return null
     const today = new Date()
     const maxDate = new Date(today.getFullYear() - mindestalter, today.getMonth(), today.getDate())
-    return maxDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return maxDate.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
   }
 
   return (
     <Modal isOpen={isOpen}>
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">
-          Alterskontrolle erforderlich
-        </h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Alterskontrolle erforderlich</h2>
 
-        {productName && (
-          <p className="text-lg text-gray-700 mb-2">
-            Produkt: {productName}
-          </p>
-        )}
+        {productName && <p className="text-lg text-gray-700 mb-2">Produkt: {productName}</p>}
 
         {mindestalter && (
           <div className="mb-4">

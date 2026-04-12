@@ -53,7 +53,6 @@ export function useScan() {
     return stored ? JSON.parse(stored) : []
   })
 
-  const [actionHistory, setActionHistory] = useState([])
   const [kategorien, setKategorien] = useState([])
   const [aktiveProdukteList, setAktiveProdukteList] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
@@ -150,13 +149,11 @@ export function useScan() {
         discount: product.discount || null
       }
       setCartItemsList((prev) => [...prev, item])
-      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'success', message: `${item.name} hinzugefuegt` })
       window.api?.tapo?.flashGreen()
     } catch {
       const item = { type: 'barcode', barcode, name: `Unbekannt (${barcode})`, price: 0 }
       setCartItemsList((prev) => [...prev, item])
-      setActionHistory((prev) => [...prev, { type: 'barcode' }])
       setScanStatus({ type: 'error', message: `Unbekannt (${barcode}) hinzugefuegt` })
       window.api?.tapo?.flashRed()
     }
@@ -180,7 +177,6 @@ export function useScan() {
       }
 
       setCartItemsList((prev) => [...prev, buildCartItem(product)])
-      setActionHistory((prev) => [...prev, { type: 'category', productId: id }])
     },
     [aktiveProdukteList]
   )
@@ -196,7 +192,6 @@ export function useScan() {
   const resetLast = useCallback(() => {
     if (cartItemsList.length === 0) return
     setCartItemsList((prev) => prev.slice(0, -1))
-    setActionHistory((prev) => prev.slice(0, -1))
   }, [cartItemsList.length])
 
   const handleNavigateToSummary = useCallback(() => {

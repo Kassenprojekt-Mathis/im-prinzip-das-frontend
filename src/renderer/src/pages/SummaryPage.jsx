@@ -20,8 +20,14 @@ export default function SummaryPage() {
     sessionStorage.getItem('inspectionActive') === 'true'
   )
 
-  const { voucherCode, setVoucherCode, voucherStatus, appliedVoucher, applyVoucher, removeVoucher } =
-    useVoucher()
+  const {
+    voucherCode,
+    setVoucherCode,
+    voucherStatus,
+    appliedVoucher,
+    applyVoucher,
+    removeVoucher
+  } = useVoucher()
 
   const handleContinueToPayment = () => {
     if (!inspectionCompleted && !inspectionActive) {

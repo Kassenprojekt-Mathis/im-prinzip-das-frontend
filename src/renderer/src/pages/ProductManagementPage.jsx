@@ -78,7 +78,10 @@ export default function ProductManagementPage() {
     setActiveTab('manual')
     setBarcodeInput('')
     setIdFromScan(true)
-    showMessage('success', `Barcode ${barcode} als ID übernommen – bitte restliche Felder ausfüllen`)
+    showMessage(
+      'success',
+      `Barcode ${barcode} als ID übernommen – bitte restliche Felder ausfüllen`
+    )
   }
 
   const handleFormSubmit = async (e) => {
@@ -109,7 +112,7 @@ export default function ProductManagementPage() {
       rabatt: parseFloat(manualInput.rabatt || '0'),
       mindestalter: parseInt(manualInput.mindestalter || '0'),
       bild: manualInput.bild || null,
-      ...((!editingProduct && manualInput.id) && { id: parseInt(manualInput.id) })
+      ...(!editingProduct && manualInput.id && { id: parseInt(manualInput.id) })
     }
 
     try {

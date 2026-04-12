@@ -81,5 +81,29 @@ export const productApi = {
       throw new Error('Fehler beim Laden der Produkte nach Kategorie')
     }
     return await response.json()
+  },
+
+  // Lagerbestand nach Kauf reduzieren
+  async reduceStock(items) {
+    // Alle Produkte einmalig laden
+    const allProducts = await this.getAllProducts()
+
+    // Artikel Update
+    return await Promise.allSettled(
+      items.map(async (item) => {
+        const productId = item.id || allProducts.find((p) => p.barcode === item.barcode)?.id
+
+        if (!productId) {
+          console.warn('Produkt nicht gefunden:', item)
+          return { success: false, item }
+        }
+
+        const product = await this.getProductById(productId)
+        const newStock = Math.max(0, product.lagerbestand - item.quantity)
+        await this.updateProduct(productId, { lagerbestand: newStock })
+
+        return { success: true, productId, newStock }
+      })
+    )
   }
 }

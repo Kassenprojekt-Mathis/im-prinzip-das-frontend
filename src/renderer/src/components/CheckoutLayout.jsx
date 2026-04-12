@@ -25,6 +25,11 @@ export default function CheckoutLayout() {
   const [showEmployeeMenu, setShowEmployeeMenu] = useState(false)
   const [cartItems, setCartItems] = useState([])
   const [customerCard, setCustomerCard] = useState(sessionStorage.getItem('customerCard') || '')
+  const [customerName, setCustomerName] = useState(sessionStorage.getItem('customerName') || '')
+  const [appliedVoucher, setAppliedVoucher] = useState(() => {
+    const stored = sessionStorage.getItem('appliedVoucher')
+    return stored ? JSON.parse(stored) : null
+  })
 
   const isSummary = location.pathname.includes('/summary')
 
@@ -35,6 +40,9 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItems')
     setCartItems(stored ? JSON.parse(stored) : [])
     setCustomerCard(sessionStorage.getItem('customerCard') || '')
+    setCustomerName(sessionStorage.getItem('customerName') || '')
+    const storedVoucher = sessionStorage.getItem('appliedVoucher')
+    setAppliedVoucher(storedVoucher ? JSON.parse(storedVoucher) : null)
   }, [])
 
   useEffect(() => {
@@ -51,19 +59,21 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItems')
     const allItems = stored ? JSON.parse(stored) : []
 
-    const matchingItems = allItems.filter((item) => (item.barcode || item.name) === key)
-    const otherItems = allItems.filter((item) => (item.barcode || item.name) !== key)
+    const firstIndex = allItems.findIndex((item) => (item.barcode || item.name) === key)
+    if (firstIndex === -1) return
 
-    if (matchingItems.length === 0) return
-
-    const template = { ...matchingItems[0], quantity: 1 }
+    const template = { ...allItems[firstIndex], quantity: 1 }
 
     const newItems = []
     for (let i = 0; i < newQuantity; i++) {
       newItems.push({ ...template })
     }
 
-    const updatedCart = [...otherItems, ...newItems]
+    // Items vor dem ersten Match (die nicht matchen) + neue Items + Items nach dem ersten Match (die nicht matchen)
+    const before = allItems.slice(0, firstIndex)
+    const after = allItems.slice(firstIndex).filter((item) => (item.barcode || item.name) !== key)
+
+    const updatedCart = [...before, ...newItems, ...after]
     sessionStorage.setItem('cartItems', JSON.stringify(updatedCart))
 
     updateCartItemsList(key, newQuantity)
@@ -89,28 +99,27 @@ export default function CheckoutLayout() {
 
     const list = JSON.parse(stored)
 
-    const matchingIndices = []
-    list.forEach((item, i) => {
-      const itemKey = item.barcode || item.name
-      if (itemKey === key) matchingIndices.push(i)
-    })
-
-    if (matchingIndices.length === 0) return
+    const firstIndex = list.findIndex((item) => (item.barcode || item.name) === key)
+    if (firstIndex === -1) return
 
     if (newQuantity === 0) {
-      const updated = list.filter((_, i) => !matchingIndices.includes(i))
+      const updated = list.filter((item) => (item.barcode || item.name) !== key)
       sessionStorage.setItem('cartItemsList', JSON.stringify(updated))
       return
     }
 
-    const template = { ...list[matchingIndices[0]] }
-    const otherItems = list.filter((_, i) => !matchingIndices.includes(i))
+    const template = { ...list[firstIndex] }
 
+    const newItems = []
     for (let i = 0; i < newQuantity; i++) {
-      otherItems.push({ ...template })
+      newItems.push({ ...template })
     }
 
-    sessionStorage.setItem('cartItemsList', JSON.stringify(otherItems))
+    // Reihenfolge beibehalten: Items vor dem ersten Match + neue Items + Items nach dem ersten Match (ohne Matches)
+    const before = list.slice(0, firstIndex)
+    const after = list.slice(firstIndex).filter((item) => (item.barcode || item.name) !== key)
+
+    sessionStorage.setItem('cartItemsList', JSON.stringify([...before, ...newItems, ...after]))
   }
 
   const isActive = (path) => location.pathname.includes(path)
@@ -134,6 +143,8 @@ export default function CheckoutLayout() {
   const handleEmployeeMenuClose = () => {
     setShowEmployeeMenu(false)
   }
+
+  const pendingAgeProduct = JSON.parse(sessionStorage.getItem('pendingAgeProduct') || '{}')
 
   const handleInspectionClick = () => {
     setShowEmployeeMenu(false)
@@ -207,19 +218,39 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItemsList')
     if (stored && pendingProduct.id) {
       const cartList = JSON.parse(stored)
-      cartList.push({
-        type: 'manual',
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: pendingProduct.preis || pendingProduct.price || 0,
-        mindestalter: pendingProduct.mindestalter
-      })
+
+      // Unterscheidung: Barcode-Produkt oder manuelles Kategorie-Produkt
+      if (pendingProduct.type === 'barcode') {
+        cartList.push({
+          type: 'barcode',
+          barcode: pendingProduct.barcode,
+          id: pendingProduct.id,
+          name: pendingProduct.name,
+          price: pendingProduct.price || pendingProduct.preis || 0,
+          discount: pendingProduct.discount || null,
+          mindestalter: pendingProduct.mindestalter
+        })
+      } else {
+        cartList.push({
+          type: 'manual',
+          id: pendingProduct.id,
+          name: pendingProduct.name,
+          price: pendingProduct.price || pendingProduct.preis || 0,
+          discount: pendingProduct.rabatt || null,
+          mindestalter: pendingProduct.mindestalter
+        })
+      }
+
       sessionStorage.setItem('cartItemsList', JSON.stringify(cartList))
     }
 
+    // Verifiziertes Alter speichern (höchstes bisheriges behalten)
+    const currentVerified = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+    const newVerified = Math.max(currentVerified, pendingProduct.mindestalter || 0)
+    sessionStorage.setItem('ageControlVerifiedAge', newVerified.toString())
+
     sessionStorage.removeItem('ageControlActive')
     sessionStorage.removeItem('pendingAgeProduct')
-    sessionStorage.setItem('ageControlCompleted', 'true')
     window.dispatchEvent(new Event('ageControlStatusChanged'))
     window.api?.tapo?.flashGreen()
   }
@@ -297,7 +328,7 @@ export default function CheckoutLayout() {
       <main
         className="flex-1 grid gap-6"
         style={{
-          gridTemplateColumns: isSummary ? '1fr 2fr' : '2fr 1fr',
+          gridTemplateColumns: isSummary ? '3fr 2fr' : '2fr 1fr',
           transition: 'grid-template-columns 300ms ease'
         }}
       >
@@ -320,6 +351,8 @@ export default function CheckoutLayout() {
             isOpen={showAgeVerification}
             onYes={handleAgeVerified}
             onNo={handleAgeRejected}
+            productName={pendingAgeProduct.name}
+            mindestalter={pendingAgeProduct.mindestalter}
           />
 
           <InspectionFailedModal
@@ -361,6 +394,8 @@ export default function CheckoutLayout() {
           <Sidebar
             items={cartItems}
             customerCard={customerCard}
+            customerName={customerName}
+            appliedVoucher={appliedVoucher}
             editable={isSummary}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}

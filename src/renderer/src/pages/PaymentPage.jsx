@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
+import { useVoucher } from '../hooks/useVoucher'
 import { printerApi } from '../api/printerAPI'
+import { belegApi } from '../api/receiptAPI'
+import { ecoApi } from '../api/ecoApi'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -10,6 +13,7 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()
+  const { getFinalTotal, einloesen } = useVoucher()
   const scannedItems =
     location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
 
@@ -30,9 +34,14 @@ export default function PaymentPage() {
     return items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
   }, [items])
 
+  const finalTotal = getFinalTotal(total)
+
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('')
-  const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
+  const [ecoScore, setEcoScore] = useState(null)
+  const [voucher, setVoucher] = useState(null)
+  const [paymentError, setPaymentError] = useState(null)
+  const voucherRef = useRef(null)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
   const [printers, setPrinters] = useState([])
@@ -62,15 +71,66 @@ export default function PaymentPage() {
       await printerApi.printReceipt({
         storeName: 'Im Prinzip',
         items,
-        total,
+        total: finalTotal,
         paymentMethod,
-        footer: 'Vielen Dank fuer Ihren Einkauf!'
+        footer: 'Vielen Dank fuer Ihren Einkauf!',
+        voucher: voucherRef.current || null
       })
       setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
     } catch (err) {
       setPrintStatus({ type: 'error', message: `Druckfehler: ${err.message}` })
     } finally {
       setIsPrinting(false)
+    }
+  }
+
+  const processPayment = async (method) => {
+    setPaymentError(null)
+    const customerCardRaw = sessionStorage.getItem('customerCard')
+    const kundeId = customerCardRaw ? parseInt(customerCardRaw, 10) : null
+
+    // Produkte für Backend aufbereiten: { produkt_id, menge }
+    const produkteMap = {}
+    for (const item of items) {
+      if (item.id) {
+        if (produkteMap[item.id]) {
+          produkteMap[item.id].menge += item.quantity || 1
+        } else {
+          produkteMap[item.id] = { produkt_id: item.id, menge: item.quantity || 1 }
+        }
+      }
+    }
+
+    try {
+      await einloesen(total)
+    } catch (err) {
+      console.error('Fehler beim Einlösen des Gutscheins:', err)
+    }
+
+    try {
+      await belegApi.createBeleg({
+        produkte: Object.values(produkteMap),
+        gegebenesgeld: finalTotal,
+        zahlungsmethode: method,
+        kundeId
+      })
+    } catch (err) {
+      console.error('Fehler beim Erstellen des Belegs:', err)
+      setPaymentError(err.message || 'Beleg konnte nicht erstellt werden')
+    }
+
+    if (kundeId && !isNaN(kundeId)) {
+      try {
+        const punkte = await ecoApi.getEcopunkte(kundeId)
+        setEcoScore(punkte)
+        if (punkte > 0 && punkte % 5 === 0) {
+          const gutschein = await ecoApi.createGutschein()
+          voucherRef.current = gutschein
+          setVoucher(gutschein)
+        }
+      } catch (err) {
+        console.error('Fehler beim Ecopunkte-Check:', err)
+      }
     }
   }
 
@@ -91,12 +151,14 @@ export default function PaymentPage() {
     }
   }
 
-  const handleCardPayment = () => {
+  const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
+    await processPayment('Kartenzahlung')
     setPaymentComplete(true)
   }
-  const handleCashPayment = () => {
+  const handleCashPayment = async () => {
     setPaymentMethod('Bar')
+    await processPayment('Bar')
     setPaymentComplete(true)
   }
   const handleNextPurchase = () => {
@@ -113,12 +175,25 @@ export default function PaymentPage() {
           <div className="flex justify-center mb-8">
             <img src={PersonIcon} alt="Person" className="w-32 h-32 object-contain" />
           </div>
-          <div className="bg-gray-100 rounded-lg p-6 mb-8">
-            <p className="text-xl text-gray-700 mb-2">Ihr neuer EcoScore:</p>
-            <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
-              {ecoScore}
-            </p>
-          </div>
+
+          {ecoScore !== null && (
+            <div className="bg-gray-100 rounded-lg p-6 mb-8">
+              <p className="text-xl text-gray-700 mb-2">Ihre neuen Ecopunkte:</p>
+              <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
+                {ecoScore}
+              </p>
+            </div>
+          )}
+
+          {voucher && (
+            <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 mb-6">
+              <p className="text-lg font-bold text-green-700 mb-1">Eco-Gutschein erhalten!</p>
+              <p className="text-2xl font-bold text-green-800 tracking-widest">{voucher.code}</p>
+              <p className="text-sm text-green-600 mt-1">
+                Wert: {parseFloat(voucher.wert).toFixed(2)} EUR &mdash; siehe Bon
+              </p>
+            </div>
+          )}
 
           {devMode && (
             <div className="mb-6 space-y-3">
@@ -185,7 +260,13 @@ export default function PaymentPage() {
     )
   }
   return (
-    <div className="flex items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-8">
+      {paymentError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-700 text-center max-w-xl">
+          <p className="text-lg font-bold mb-1">Zahlung fehlgeschlagen</p>
+          <p>{paymentError}</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">
         <button
           onClick={handleCardPayment}

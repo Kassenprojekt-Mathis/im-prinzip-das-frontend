@@ -13,7 +13,7 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()
-  const { getFinalTotal, einloesen } = useVoucher()
+  const { getFinalTotal, einloesen, appliedVoucher } = useVoucher()
   const scannedItems =
     location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
 
@@ -71,10 +71,12 @@ export default function PaymentPage() {
       await printerApi.printReceipt({
         storeName: 'Im Prinzip',
         items,
+        subtotal: total,
         total: finalTotal,
         paymentMethod,
         footer: 'Vielen Dank fuer Ihren Einkauf!',
-        voucher: voucherRef.current || null
+        voucher: voucherRef.current || null,
+        appliedCoupon: appliedVoucher || null
       })
       setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
     } catch (err) {

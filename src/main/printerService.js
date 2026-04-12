@@ -160,6 +160,28 @@ function printReceipt(receiptData) {
       builder.addFeed()
       builder.addComponent(new POSTextBuilder('--------------------------------').build())
 
+      if (receiptData.appliedCoupon) {
+        const coupon = receiptData.appliedCoupon
+        const subtotal = receiptData.subtotal || receiptData.total
+        const subtotalStr = `Zwischensumme: ${subtotal.toFixed(2)} EUR`
+        builder.addComponent(
+          new POSTextBuilder(subtotalStr)
+            .setAlignment(POSTextAlignment.RIGHT)
+            .build()
+        )
+
+        const discountLabel = coupon.ist_prozentual
+          ? `Gutschein ${sanitize(coupon.code)} (${parseFloat(coupon.wert)}%)`
+          : `Gutschein ${sanitize(coupon.code)}`
+        const discountAmt = parseFloat(coupon.discountAmount || coupon.wert).toFixed(2)
+        const discountStr = `-${discountAmt} EUR`
+        const discountPadding = LINE_WIDTH - discountLabel.length - discountStr.length
+        const discountLine = discountLabel + ' '.repeat(Math.max(discountPadding, 1)) + discountStr
+        builder.addComponent(new POSTextBuilder(discountLine).build())
+        builder.addFeed()
+        builder.addComponent(new POSTextBuilder('--------------------------------').build())
+      }
+
       builder.addComponent(
         new POSTextBuilder(`SUMME: ${receiptData.total.toFixed(2)} EUR`)
           .setStyle(POSPrintStyle.BOLD, POSPrintStyle.DOUBLE_HEIGHT)

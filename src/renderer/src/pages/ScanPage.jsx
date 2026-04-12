@@ -97,12 +97,42 @@ export default function ScanPage() {
     // Produkt scannen
     try {
       const product = await scannerApi.sendBarcode(barcode)
+      // Backend liefert: name, preis, rabatt, mindestalter – Mapping auf Frontend-Felder
+      const rabatt = product.rabatt || 0
+
+      // Alterskontrolle für Barcode-Produkte
+      const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+      if (product.mindestalter && product.mindestalter >= 16 && product.mindestalter > verifiedAge) {
+        // Alterskontrolle erforderlich – Produkt noch NICHT hinzufügen
+        setAgeControlActive(true)
+        setPendingAgeProduct({
+          ...product,
+          barcode,
+          type: 'barcode',
+          price: product.preis || 0,
+          discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null
+        })
+        sessionStorage.setItem('ageControlActive', 'true')
+        sessionStorage.setItem('pendingAgeProduct', JSON.stringify({
+          ...product,
+          barcode,
+          type: 'barcode',
+          price: product.preis || 0,
+          discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null
+        }))
+        setScanStatus({ type: 'warning', message: `Alterskontrolle für ${product.name} erforderlich` })
+        setBarcodeInput('')
+        return
+      }
+
       const item = {
         type: 'barcode',
         barcode,
+        id: product.id,
         name: product.name || `Unbekannt (${barcode})`,
-        price: product.price || 0,
-        discount: product.discount || null
+        price: product.preis || 0,
+        discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null,
+        mindestalter: product.mindestalter || 0
       }
       setCartItemsList((prev) => [...prev, item])
       setActionHistory((prev) => [...prev, { type: 'barcode' }])
@@ -137,10 +167,10 @@ export default function ScanPage() {
     const product = aktiveProdukteList.find((p) => p.id === id)
     if (!product) return
 
-    // Age Control Check - nur beim ersten altersbeschränkten Produkt
-    const ageControlCompleted = sessionStorage.getItem('ageControlCompleted') === 'true'
+    // Age Control Check - prüfe ob das verifizierte Alter ausreicht
+    const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
     if (product.mindestalter && product.mindestalter >= 16) {
-      if (!ageControlCompleted) {
+      if (product.mindestalter > verifiedAge) {
         // Erste Kontrolle - warten auf Mitarbeiter
         setAgeControlActive(true)
         setPendingAgeProduct(product)
@@ -239,7 +269,8 @@ export default function ScanPage() {
 
   useEffect(() => {
     const handleAgeControlUpdate = () => {
-      setAgeControlActive(sessionStorage.getItem('ageControlActive') === 'true')
+      const isStillActive = sessionStorage.getItem('ageControlActive') === 'true'
+      setAgeControlActive(isStillActive)
       const stored = sessionStorage.getItem('pendingAgeProduct')
       setPendingAgeProduct(stored ? JSON.parse(stored) : null)
 
@@ -248,11 +279,16 @@ export default function ScanPage() {
       if (cartStored) {
         setCartItemsList(JSON.parse(cartStored))
       }
+
+      // Barcode-Input refokussieren nach abgeschlossener Alterskontrolle
+      if (!isStillActive) {
+        setTimeout(focusBarcodeInput, 200)
+      }
     }
 
     window.addEventListener('ageControlStatusChanged', handleAgeControlUpdate)
     return () => window.removeEventListener('ageControlStatusChanged', handleAgeControlUpdate)
-  }, [])
+  }, [focusBarcodeInput])
 
   const hasItems = cartItemsList.length > 0
 

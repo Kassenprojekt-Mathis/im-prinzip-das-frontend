@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { printerApi } from '../api/printerAPI'
-import { productApi } from '../api/productAPI'
+import { belegApi } from '../api/belegAPI'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -92,34 +92,70 @@ export default function PaymentPage() {
     }
   }
 
-  const updateStock = async () => {
-    try {
-      // Vorbereitung Lagerbestandsaktualisierung
-      const stockItems = items.map((item) => ({
-        id: item.id || null,
-        barcode: item.barcode || null,
-        quantity: item.quantity || 1
-      }))
+  const [paymentError, setPaymentError] = useState(null)
 
-      if (stockItems.length > 0) {
-        await productApi.reduceStock(stockItems)
-        console.log('Lagerbestand erfolgreich aktualisiert')
+  const createBeleg = async (zahlungsmethode) => {
+    setPaymentError(null)
+
+    // Produkte für Backend aufbereiten: { produkt_id, menge }
+    const produkteMap = {}
+    for (const item of items) {
+      if (item.id) {
+        if (produkteMap[item.id]) {
+          produkteMap[item.id].menge += item.quantity || 1
+        } else {
+          produkteMap[item.id] = { produkt_id: item.id, menge: item.quantity || 1 }
+        }
       }
+    }
+    const produkte = Object.values(produkteMap)
+
+    if (produkte.length === 0) {
+      console.warn('Keine gültigen Produkte für Beleg')
+      return true // trotzdem durchlassen für unbekannte Produkte
+    }
+
+    // Alterskontrolle: prüfe ob im Warenkorb Produkte mit Mindestalter sind
+    const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+    const alterskontrolleBestaetigt = verifiedAge > 0
+
+    // Kunden-ID aus Kundenkarte (falls vorhanden)
+    const kundeId = sessionStorage.getItem('customerCardId')
+      ? parseInt(sessionStorage.getItem('customerCardId'))
+      : null
+
+    const belegData = {
+      produkte,
+      gegebenes_geld: total,
+      zahlungsmethode,
+      ...(alterskontrolleBestaetigt && { alterskontrolle_bestaetigt: true }),
+      ...(kundeId && { kunde_id: kundeId })
+    }
+
+    try {
+      const beleg = await belegApi.createBeleg(belegData)
+      console.log('Beleg erstellt:', beleg)
+      return true
     } catch (error) {
-      console.error('Fehler beim Aktualisieren des Lagerbestands:', error)
-      // Fehler wird geloggt aber Zahlung wird nicht blockiert
+      console.error('Fehler beim Erstellen des Belegs:', error)
+      if (error.status === 409) {
+        setPaymentError('Alterskontrolle erforderlich! Bitte lassen Sie Ihr Alter von einem Mitarbeiter kontrollieren.')
+      } else {
+        setPaymentError(error.message || 'Fehler beim Abschließen des Kaufs')
+      }
+      return false
     }
   }
 
   const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
-    await updateStock()
-    setPaymentComplete(true)
+    const success = await createBeleg('karte')
+    if (success) setPaymentComplete(true)
   }
   const handleCashPayment = async () => {
     setPaymentMethod('Bar')
-    await updateStock()
-    setPaymentComplete(true)
+    const success = await createBeleg('bar')
+    if (success) setPaymentComplete(true)
   }
   const handleNextPurchase = () => {
     sessionStorage.clear()
@@ -207,7 +243,13 @@ export default function PaymentPage() {
     )
   }
   return (
-    <div className="flex items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-8">
+      {paymentError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-700 text-center max-w-xl">
+          <p className="text-lg font-bold mb-1">⚠️ Zahlung fehlgeschlagen</p>
+          <p>{paymentError}</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">
         <button
           onClick={handleCardPayment}

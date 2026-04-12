@@ -4,6 +4,7 @@ import { productApi } from '../api/productAPI'
 import { categoryApi } from '../api/categoryAPI'
 
 const INITIAL_MANUAL_INPUT = {
+  id: '',
   name: '',
   preis: '',
   mwst_satz: '',
@@ -65,18 +66,15 @@ export default function ProductManagementPage() {
     }
   }, [activeTab, editingProduct])
 
-  const handleBarcodeScan = async () => {
+  const handleBarcodeScan = () => {
     if (!barcodeInput.trim()) return
     const barcode = barcodeInput.trim()
 
-    try {
-      await productApi.createProduct({ barcode })
-      await loadProducts()
-      showMessage('success', `Produkt ${barcode} hinzugefügt`)
-      setBarcodeInput('')
-    } catch (error) {
-      showMessage('error', error.message || 'Fehler beim Hinzufügen')
-    }
+    // Barcode als ID ins Formular übernehmen und zum manuellen Tab wechseln
+    setManualInput({ ...INITIAL_MANUAL_INPUT, id: barcode })
+    setActiveTab('manual')
+    setBarcodeInput('')
+    showMessage('success', `Barcode ${barcode} als ID übernommen – bitte restliche Felder ausfüllen`)
   }
 
   const handleFormSubmit = async (e) => {
@@ -93,6 +91,11 @@ export default function ProductManagementPage() {
       return
     }
 
+    if (!editingProduct && !manualInput.id) {
+      showMessage('error', 'Bitte zuerst einen Barcode scannen oder eine ID eingeben')
+      return
+    }
+
     const produktDaten = {
       name: manualInput.name,
       preis: parseFloat(manualInput.preis),
@@ -101,7 +104,8 @@ export default function ProductManagementPage() {
       kategorie_id: parseInt(manualInput.kategorie_id),
       rabatt: parseFloat(manualInput.rabatt || '0'),
       mindestalter: parseInt(manualInput.mindestalter || '0'),
-      bild: manualInput.bild || null
+      bild: manualInput.bild || null,
+      ...((!editingProduct && manualInput.id) && { id: parseInt(manualInput.id) })
     }
 
     try {
@@ -361,6 +365,33 @@ export default function ProductManagementPage() {
             {/* Manual-Tab */}
             {(activeTab === 'manual' || editingProduct) && (
               <form onSubmit={handleFormSubmit} className="space-y-3">
+                {/* ID/Barcode-Feld – nur bei Neuanlage sichtbar */}
+                {!editingProduct && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      ID / Barcode *
+                    </label>
+                    <input
+                      type="number"
+                      value={manualInput.id}
+                      onChange={(e) => setManualInput({ ...manualInput, id: e.target.value })}
+                      placeholder="Barcode scannen oder ID eingeben"
+                      required
+                      readOnly={!!manualInput.id}
+                      className={`w-full px-3 py-2 text-sm border-2 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8] ${
+                        manualInput.id
+                          ? 'border-green-400 bg-green-50 font-semibold'
+                          : 'border-gray-300'
+                      }`}
+                    />
+                    {manualInput.id && (
+                      <p className="text-xs text-green-600 mt-1">
+                        ✓ Barcode {manualInput.id} übernommen
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">Name *</label>

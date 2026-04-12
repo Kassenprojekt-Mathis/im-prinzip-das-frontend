@@ -7,6 +7,7 @@ export default function PaymentPage() {
   const {
     total,
     paymentComplete,
+    ecoScore,
     isPrinting,
     printStatus,
     printers,
@@ -27,6 +28,12 @@ export default function PaymentPage() {
           <p className="text-2xl text-gray-800 mb-4">Auf Wiedersehen!</p>
           <div className="flex justify-center mb-8">
             <img src={PersonIcon} alt="Person" className="w-32 h-32 object-contain" />
+          </div>
+          <div className="bg-gray-100 rounded-lg p-6 mb-8">
+            <p className="text-xl text-gray-700 mb-2">Ihr neuer EcoScore:</p>
+            <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
+              {ecoScore}
+            </p>
           </div>
 
           {devMode && (

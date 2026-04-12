@@ -35,6 +35,7 @@ export function usePayment() {
 
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('')
+  const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
   const [printers, setPrinters] = useState([])
@@ -129,6 +130,7 @@ export function usePayment() {
     printers,
     currentPrinter,
     devMode,
+    ecoScore,
     handlePayment,
     handlePrinterChange,
     handleNextPurchase,

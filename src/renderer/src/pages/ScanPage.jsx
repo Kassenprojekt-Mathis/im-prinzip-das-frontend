@@ -110,8 +110,7 @@ export default function ScanPage() {
     // Produkt scannen
     try {
       const product = await scannerApi.sendBarcode(barcode)
-      // Backend liefert: name, preis, rabatt, mindestalter – Mapping auf Frontend-Felder
-      const rabatt = product.rabatt || 0
+      // scannerAPI mappt bereits: preis→price, rabatt→discount
 
       // Alterskontrolle für Barcode-Produkte
       const verifiedAge = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
@@ -122,16 +121,16 @@ export default function ScanPage() {
           ...product,
           barcode,
           type: 'barcode',
-          price: product.preis || 0,
-          discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null
+          price: product.price || 0,
+          discount: product.discount || null
         })
         sessionStorage.setItem('ageControlActive', 'true')
         sessionStorage.setItem('pendingAgeProduct', JSON.stringify({
           ...product,
           barcode,
           type: 'barcode',
-          price: product.preis || 0,
-          discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null
+          price: product.price || 0,
+          discount: product.discount || null
         }))
         setScanStatus({ type: 'warning', message: `Alterskontrolle für ${product.name} erforderlich` })
         setBarcodeInput('')
@@ -143,8 +142,8 @@ export default function ScanPage() {
         barcode,
         id: product.id,
         name: product.name || `Unbekannt (${barcode})`,
-        price: product.preis || 0,
-        discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null,
+        price: product.price || 0,
+        discount: product.discount || null,
         mindestalter: product.mindestalter || 0
       }
       setCartItemsList((prev) => [...prev, item])

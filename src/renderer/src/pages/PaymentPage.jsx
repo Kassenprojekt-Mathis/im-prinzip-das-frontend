@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { useVoucher } from '../hooks/useVoucher'
 import { printerApi } from '../api/printerAPI'
-import { belegApi } from '../api/receiptAPI'
-import { ecoApi } from '../api/ecoApi'
+import { receiptApi } from '../api/receiptAPI'
+import { ecoApi } from '../api/ecoAPI'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -110,7 +110,7 @@ export default function PaymentPage() {
     }
 
     try {
-      await belegApi.createBeleg({
+      await receiptApi.createReceipt({
         produkte: Object.values(produkteMap),
         gegebenesgeld: finalTotal,
         zahlungsmethode: method,

@@ -117,6 +117,7 @@ export default function ScanPage() {
       if (product.mindestalter && product.mindestalter >= 16 && product.mindestalter > verifiedAge) {
         // Alterskontrolle erforderlich – Produkt noch NICHT hinzufügen
         setAgeControlActive(true)
+        window.api?.tapo?.flashRed()
         setPendingAgeProduct({
           ...product,
           barcode,
@@ -185,6 +186,7 @@ export default function ScanPage() {
       if (product.mindestalter > verifiedAge) {
         // Erste Kontrolle - warten auf Mitarbeiter
         setAgeControlActive(true)
+        window.api?.tapo?.flashRed()
         setPendingAgeProduct(product)
         sessionStorage.setItem('ageControlActive', 'true')
         sessionStorage.setItem('pendingAgeProduct', JSON.stringify(product))

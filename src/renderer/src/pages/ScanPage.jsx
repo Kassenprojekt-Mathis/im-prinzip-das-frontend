@@ -97,12 +97,15 @@ export default function ScanPage() {
     // Produkt scannen
     try {
       const product = await scannerApi.sendBarcode(barcode)
+      // Backend liefert: name, preis, rabatt – Mapping auf Frontend-Felder
+      const rabatt = product.rabatt || 0
       const item = {
         type: 'barcode',
         barcode,
+        id: product.id,
         name: product.name || `Unbekannt (${barcode})`,
-        price: product.price || 0,
-        discount: product.discount || null
+        price: product.preis || 0,
+        discount: rabatt > 0 ? { amount: (product.preis * rabatt) / 100, label: `${rabatt}% Rabatt` } : null
       }
       setCartItemsList((prev) => [...prev, item])
       setActionHistory((prev) => [...prev, { type: 'barcode' }])

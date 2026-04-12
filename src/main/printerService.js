@@ -177,6 +177,48 @@ function printReceipt(receiptData) {
         builder.addFeed()
       }
 
+      if (receiptData.voucher) {
+        builder.addComponent(new POSTextBuilder('================================').build())
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('*** ECO-GUTSCHEIN ***')
+            .setStyle(POSPrintStyle.BOLD)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder(sanitize(`Code: ${receiptData.voucher.code}`))
+            .setStyle(POSPrintStyle.BOLD)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder(`Wert: ${parseFloat(receiptData.voucher.wert).toFixed(2)} EUR`)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('Gueltig 3 Monate ab Ausstellung')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('Einmalig einzuloesen.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder('Kein Restwert.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(new POSTextBuilder('================================').build())
+        builder.addFeed()
+      }
+
       builder.addComponent(new POSTextBuilder('--------------------------------').build())
 
       builder.addFeed()

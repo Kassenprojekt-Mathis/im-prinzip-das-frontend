@@ -4,6 +4,7 @@ import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
 import { categoryApi } from '../api/categoryAPI'
 import { productApi } from '../api/productAPI'
+import { kundeApi } from '../api/kundeAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -85,11 +86,23 @@ export default function ScanPage() {
 
     // Kundenkarte scannen
     if (sessionStorage.getItem('pendingCustomerCard') === 'true') {
-      sessionStorage.removeItem('pendingCustomerCard')
-      sessionStorage.setItem('customerCard', barcode)
-      window.dispatchEvent(new Event('cartUpdated'))
-      setScanStatus({ type: 'success', message: `Kundenkarte ${barcode} erfasst` })
-      window.api?.tapo?.flashGreen()
+      try {
+        const kunde = await kundeApi.getKundeById(barcode)
+        sessionStorage.removeItem('pendingCustomerCard')
+        sessionStorage.setItem('customerCard', String(kunde.id))
+        sessionStorage.setItem('customerName', `${kunde.vorname} ${kunde.name}`)
+        sessionStorage.setItem('customerEcopunkte', String(kunde.ecopunkte))
+        window.dispatchEvent(new Event('cartUpdated'))
+        setScanStatus({
+          type: 'success',
+          message: `Kundenkarte ${kunde.vorname} ${kunde.name} erfasst (${kunde.ecopunkte} Ecopunkte)`
+        })
+        window.api?.tapo?.flashGreen()
+      } catch {
+        sessionStorage.removeItem('pendingCustomerCard')
+        setScanStatus({ type: 'error', message: `Kundenkarte nicht gefunden (ID: ${barcode})` })
+        window.api?.tapo?.flashRed()
+      }
       setBarcodeInput('')
       return
     }
@@ -242,13 +255,7 @@ export default function ScanPage() {
   const getScannedItems = () => {
     return cartItemsList.map((item) => {
       if (item.type === 'manual') {
-        return {
-          name: item.name,
-          id: item.id,
-          price: item.price || 0,
-          discount: item.discount || null,
-          quantity: 1
-        }
+        return { name: item.name, id: item.id, price: item.price || 0, quantity: 1 }
       }
       return {
         barcode: item.barcode,
@@ -442,9 +449,10 @@ export default function ScanPage() {
                       </button>
                     </div>
 
-                    {/* Name */}
+                    {/* Name + Preis */}
 
                     <span className="text-lg font-bold mt-2"> {item.name} </span>
+                    <span className="text-sm text-gray-600">{(item.preis || 0).toFixed(2)} €</span>
                   </div>
                 ))}
               </div>

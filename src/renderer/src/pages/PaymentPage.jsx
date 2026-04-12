@@ -3,9 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { useVoucher } from '../hooks/useVoucher'
 import { printerApi } from '../api/printerAPI'
-import { productApi } from '../api/productAPI'
-import { receiptApi } from '../api/receiptAPI'
-import { ecoApi } from '../api/ecoAPI'
+import { belegApi } from '../api/receiptAPI'
+import { ecoApi } from '../api/ecoApi'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -14,7 +13,7 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()
-  const { getFinalTotal, einloesen } = useVoucher()
+  const { getFinalTotal, einloesen, appliedVoucher } = useVoucher()
   const scannedItems =
     location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
 
@@ -41,6 +40,7 @@ export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [ecoScore, setEcoScore] = useState(null)
   const [voucher, setVoucher] = useState(null)
+  const [paymentError, setPaymentError] = useState(null)
   const voucherRef = useRef(null)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
@@ -71,10 +71,12 @@ export default function PaymentPage() {
       await printerApi.printReceipt({
         storeName: 'Im Prinzip',
         items,
+        subtotal: total,
         total: finalTotal,
         paymentMethod,
         footer: 'Vielen Dank fuer Ihren Einkauf!',
-        voucher: voucherRef.current || null
+        voucher: voucherRef.current || null,
+        appliedCoupon: appliedVoucher || null
       })
       setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
     } catch (err) {
@@ -85,8 +87,21 @@ export default function PaymentPage() {
   }
 
   const processPayment = async (method) => {
+    setPaymentError(null)
     const customerCardRaw = sessionStorage.getItem('customerCard')
     const kundeId = customerCardRaw ? parseInt(customerCardRaw, 10) : null
+
+    // Produkte für Backend aufbereiten: { produkt_id, menge }
+    const produkteMap = {}
+    for (const item of items) {
+      if (item.id) {
+        if (produkteMap[item.id]) {
+          produkteMap[item.id].menge += item.quantity || 1
+        } else {
+          produkteMap[item.id] = { produkt_id: item.id, menge: item.quantity || 1 }
+        }
+      }
+    }
 
     try {
       await einloesen(total)
@@ -95,14 +110,15 @@ export default function PaymentPage() {
     }
 
     try {
-      await receiptApi.createReceipt({
-        kundeId,
-        gesamtbetrag: finalTotal,
+      await belegApi.createBeleg({
+        produkte: Object.values(produkteMap),
         gegebenesgeld: finalTotal,
-        zahlungsmethode: method
+        zahlungsmethode: method,
+        kundeId
       })
     } catch (err) {
       console.error('Fehler beim Erstellen des Belegs:', err)
+      setPaymentError(err.message || 'Beleg konnte nicht erstellt werden')
     }
 
     if (kundeId && !isNaN(kundeId)) {
@@ -137,34 +153,13 @@ export default function PaymentPage() {
     }
   }
 
-  const updateStock = async () => {
-    try {
-      // Vorbereitung Lagerbestandsaktualisierung
-      const stockItems = items.map((item) => ({
-        id: item.id || null,
-        barcode: item.barcode || null,
-        quantity: item.quantity || 1
-      }))
-
-      if (stockItems.length > 0) {
-        await productApi.reduceStock(stockItems)
-        console.log('Lagerbestand erfolgreich aktualisiert')
-      }
-    } catch (error) {
-      console.error('Fehler beim Aktualisieren des Lagerbestands:', error)
-      // Fehler wird geloggt aber Zahlung wird nicht blockiert
-    }
-  }
-
   const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
-    await updateStock()
     await processPayment('Kartenzahlung')
     setPaymentComplete(true)
   }
   const handleCashPayment = async () => {
     setPaymentMethod('Bar')
-    await updateStock()
     await processPayment('Bar')
     setPaymentComplete(true)
   }
@@ -182,12 +177,15 @@ export default function PaymentPage() {
           <div className="flex justify-center mb-8">
             <img src={PersonIcon} alt="Person" className="w-32 h-32 object-contain" />
           </div>
-          <div className="bg-gray-100 rounded-lg p-6 mb-8">
-            <p className="text-xl text-gray-700 mb-2">Ihr neuer EcoScore:</p>
-            <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
-              {ecoScore ?? '—'}
-            </p>
-          </div>
+
+          {ecoScore !== null && (
+            <div className="bg-gray-100 rounded-lg p-6 mb-8">
+              <p className="text-xl text-gray-700 mb-2">Ihre neuen Ecopunkte:</p>
+              <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
+                {ecoScore}
+              </p>
+            </div>
+          )}
 
           {voucher && (
             <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 mb-6">
@@ -264,7 +262,13 @@ export default function PaymentPage() {
     )
   }
   return (
-    <div className="flex items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-8">
+      {paymentError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-700 text-center max-w-xl">
+          <p className="text-lg font-bold mb-1">Zahlung fehlgeschlagen</p>
+          <p>{paymentError}</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">
         <button
           onClick={handleCardPayment}

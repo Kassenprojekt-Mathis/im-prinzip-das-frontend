@@ -1,6 +1,7 @@
 export default function Sidebar({
   items = [],
   customerCard,
+  customerName,
   appliedVoucher,
   editable = false,
   onUpdateQuantity,
@@ -117,7 +118,7 @@ export default function Sidebar({
 
         {customerCard && (
           <p className="text-[#4338CA] text-lg font-semibold mt-3">
-            Kundenkonto {customerCard} erfasst!
+            Hallo, {customerName || `Kunde ${customerCard}`}!
           </p>
         )}
         {appliedVoucher && (

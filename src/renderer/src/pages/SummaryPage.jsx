@@ -28,6 +28,7 @@ export default function SummaryPage() {
       if (Math.random() < 0.5) {
         setInspectionActive(true)
         sessionStorage.setItem('inspectionActive', 'true')
+        window.api?.tapo?.flashRed()
         window.dispatchEvent(new Event('inspectionStatusChanged'))
         return
       }

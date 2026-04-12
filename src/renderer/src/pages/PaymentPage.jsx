@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { printerApi } from '../api/printerAPI'
 import { productApi } from '../api/productAPI'
+import { kundeApi } from '../api/kundeAPI'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -33,7 +34,7 @@ export default function PaymentPage() {
 
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('')
-  const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
+  const [ecoScore, setEcoScore] = useState(null)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
   const [printers, setPrinters] = useState([])
@@ -111,14 +112,41 @@ export default function PaymentPage() {
     }
   }
 
+  const submitBeleg = async (zahlungsmethode) => {
+    const kundeId = sessionStorage.getItem('customerCard')
+    const produkte = items.map((item) => ({
+      produkt_id: item.id,
+      menge: item.quantity || 1
+    }))
+    const body = {
+      produkte,
+      gegebenes_geld: total,
+      zahlungsmethode,
+      ...(kundeId ? { kunde_id: parseInt(kundeId) } : {})
+    }
+    try {
+      await fetch('http://localhost:8000/api/beleg/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      if (kundeId) {
+        const data = await kundeApi.getEcopunkte(parseInt(kundeId))
+        setEcoScore(data.ecopunkte)
+      }
+    } catch (error) {
+      console.error('Fehler beim Erstellen des Belegs:', error)
+    }
+  }
+
   const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
-    await updateStock()
+    await Promise.all([updateStock(), submitBeleg('karte')])
     setPaymentComplete(true)
   }
   const handleCashPayment = async () => {
     setPaymentMethod('Bar')
-    await updateStock()
+    await Promise.all([updateStock(), submitBeleg('bar')])
     setPaymentComplete(true)
   }
   const handleNextPurchase = () => {
@@ -135,12 +163,14 @@ export default function PaymentPage() {
           <div className="flex justify-center mb-8">
             <img src={PersonIcon} alt="Person" className="w-32 h-32 object-contain" />
           </div>
-          <div className="bg-gray-100 rounded-lg p-6 mb-8">
-            <p className="text-xl text-gray-700 mb-2">Ihr neuer EcoScore:</p>
-            <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
-              {ecoScore}
-            </p>
-          </div>
+          {ecoScore !== null && (
+            <div className="bg-gray-100 rounded-lg p-6 mb-8">
+              <p className="text-xl text-gray-700 mb-2">Ihre neuen Ecopunkte:</p>
+              <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
+                {ecoScore}
+              </p>
+            </div>
+          )}
 
           {devMode && (
             <div className="mb-6 space-y-3">

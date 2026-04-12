@@ -4,6 +4,7 @@ import { useDevMode } from '../context/DevModeContext'
 import { scannerApi } from '../api/scannerAPI'
 import { categoryApi } from '../api/categoryAPI'
 import { productApi } from '../api/productAPI'
+import { kundeApi } from '../api/kundeAPI'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -85,11 +86,22 @@ export default function ScanPage() {
 
     // Kundenkarte scannen
     if (sessionStorage.getItem('pendingCustomerCard') === 'true') {
-      sessionStorage.removeItem('pendingCustomerCard')
-      sessionStorage.setItem('customerCard', barcode)
-      window.dispatchEvent(new Event('cartUpdated'))
-      setScanStatus({ type: 'success', message: `Kundenkarte ${barcode} erfasst` })
-      window.api?.tapo?.flashGreen()
+      try {
+        const kunde = await kundeApi.getKundeById(barcode)
+        sessionStorage.removeItem('pendingCustomerCard')
+        sessionStorage.setItem('customerCard', String(kunde.id))
+        sessionStorage.setItem('customerName', `${kunde.vorname} ${kunde.name}`)
+        sessionStorage.setItem('customerEcopunkte', String(kunde.ecopunkte))
+        window.dispatchEvent(new Event('cartUpdated'))
+        setScanStatus({
+          type: 'success',
+          message: `Kundenkarte ${kunde.vorname} ${kunde.name} erfasst (${kunde.ecopunkte} Ecopunkte)`
+        })
+        window.api?.tapo?.flashGreen()
+      } catch {
+        setScanStatus({ type: 'error', message: `Kundenkarte nicht gefunden (ID: ${barcode})` })
+        window.api?.tapo?.flashRed()
+      }
       setBarcodeInput('')
       return
     }

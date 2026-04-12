@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
-import { useVoucher } from '../hooks/useVoucher'
 import { printerApi } from '../api/printerAPI'
 import { productApi } from '../api/productAPI'
 import { belegApi } from '../api/belegApi'
@@ -14,7 +13,6 @@ export default function PaymentPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()
-  const { getFinalTotal, einloesen } = useVoucher()
   const scannedItems =
     location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
 
@@ -35,7 +33,15 @@ export default function PaymentPage() {
     return items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
   }, [items])
 
-  const finalTotal = getFinalTotal(total)
+  const appliedVoucher = useMemo(() => {
+    const stored = sessionStorage.getItem('appliedVoucher')
+    return stored ? JSON.parse(stored) : null
+  }, [])
+
+  const finalTotal = useMemo(() => {
+    const discount = appliedVoucher ? parseFloat(appliedVoucher.discountAmount) : 0
+    return Math.max(0, total - discount)
+  }, [total, appliedVoucher])
 
   const [paymentComplete, setPaymentComplete] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('')
@@ -88,10 +94,12 @@ export default function PaymentPage() {
     const customerCardRaw = sessionStorage.getItem('customerCard')
     const kundeId = customerCardRaw ? parseInt(customerCardRaw, 10) : null
 
-    try {
-      await einloesen(total)
-    } catch (err) {
-      console.error('Fehler beim Einlösen des Gutscheins:', err)
+    if (appliedVoucher) {
+      try {
+        await ecoApi.einloesenGutschein(appliedVoucher.code, total)
+      } catch (err) {
+        console.error('Fehler beim Einlösen des Gutscheins:', err)
+      }
     }
 
     try {

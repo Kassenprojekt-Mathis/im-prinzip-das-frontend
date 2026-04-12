@@ -1,130 +1,23 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useDevMode } from '../context/DevModeContext'
-import { printerApi } from '../api/printerAPI'
-import { productApi } from '../api/productAPI'
+import { usePayment } from '../hooks/usePayment'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
 
 export default function PaymentPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const devMode = useDevMode()
-  const scannedItems =
-    location.state?.items || JSON.parse(sessionStorage.getItem('cartItems') || '[]')
+  const {
+    total,
+    paymentComplete,
+    isPrinting,
+    printStatus,
+    printers,
+    currentPrinter,
+    devMode,
+    handlePayment,
+    handlePrinterChange,
+    handleNextPurchase,
+    printReceipt
+  } = usePayment()
 
-  const items = useMemo(() => {
-    return scannedItems.reduce((acc, item) => {
-      const key = item.barcode || item.name
-      const existing = acc.find((i) => (i.barcode || i.name) === key)
-      if (existing) {
-        existing.quantity = (existing.quantity || 1) + 1
-      } else {
-        acc.push({ ...item, quantity: item.quantity || 1 })
-      }
-      return acc
-    }, [])
-  }, [scannedItems])
-
-  const total = useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
-  }, [items])
-
-  const [paymentComplete, setPaymentComplete] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('')
-  const [ecoScore] = useState(() => Math.floor(Math.random() * 100) + 1)
-  const [isPrinting, setIsPrinting] = useState(false)
-  const [printStatus, setPrintStatus] = useState(null)
-  const [printers, setPrinters] = useState([])
-  const [currentPrinter, setCurrentPrinter] = useState('')
-  const hasAutoPrinted = useRef(false)
-
-  useEffect(() => {
-    async function loadPrinters() {
-      try {
-        const [available, current] = await Promise.all([
-          printerApi.getAvailablePrinters(),
-          printerApi.getCurrentPrinter()
-        ])
-        setPrinters(available)
-        setCurrentPrinter(current)
-      } catch (err) {
-        console.error('Drucker konnten nicht geladen werden:', err)
-      }
-    }
-    loadPrinters()
-  }, [])
-
-  const printReceipt = async () => {
-    setIsPrinting(true)
-    setPrintStatus(null)
-    try {
-      await printerApi.printReceipt({
-        storeName: 'Im Prinzip',
-        items,
-        total,
-        paymentMethod,
-        footer: 'Vielen Dank fuer Ihren Einkauf!'
-      })
-      setPrintStatus({ type: 'success', message: 'Bon wurde erfolgreich gedruckt! 🖨️' })
-    } catch (err) {
-      setPrintStatus({ type: 'error', message: `Druckfehler: ${err.message}` })
-    } finally {
-      setIsPrinting(false)
-    }
-  }
-
-  useEffect(() => {
-    if (paymentComplete && !devMode && !hasAutoPrinted.current) {
-      hasAutoPrinted.current = true
-      printReceipt()
-    }
-  }, [paymentComplete, devMode])
-
-  const handlePrinterChange = async (e) => {
-    const name = e.target.value
-    setCurrentPrinter(name)
-    try {
-      await printerApi.setPrinter(name)
-    } catch (err) {
-      setPrintStatus({ type: 'error', message: `Fehler: ${err.message}` })
-    }
-  }
-
-  const updateStock = async () => {
-    try {
-      // Vorbereitung Lagerbestandsaktualisierung
-      const stockItems = items.map((item) => ({
-        id: item.id || null,
-        barcode: item.barcode || null,
-        quantity: item.quantity || 1
-      }))
-
-      if (stockItems.length > 0) {
-        await productApi.reduceStock(stockItems)
-        console.log('Lagerbestand erfolgreich aktualisiert')
-      }
-    } catch (error) {
-      console.error('Fehler beim Aktualisieren des Lagerbestands:', error)
-      // Fehler wird geloggt aber Zahlung wird nicht blockiert
-    }
-  }
-
-  const handleCardPayment = async () => {
-    setPaymentMethod('Kartenzahlung')
-    await updateStock()
-    setPaymentComplete(true)
-  }
-  const handleCashPayment = async () => {
-    setPaymentMethod('Bar')
-    await updateStock()
-    setPaymentComplete(true)
-  }
-  const handleNextPurchase = () => {
-    sessionStorage.clear()
-    navigate('/scan')
-  }
   if (paymentComplete) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
@@ -135,17 +28,11 @@ export default function PaymentPage() {
           <div className="flex justify-center mb-8">
             <img src={PersonIcon} alt="Person" className="w-32 h-32 object-contain" />
           </div>
-          <div className="bg-gray-100 rounded-lg p-6 mb-8">
-            <p className="text-xl text-gray-700 mb-2">Ihr neuer EcoScore:</p>
-            <p className="text-5xl font-bold" style={{ color: '#948BB8' }}>
-              {ecoScore}
-            </p>
-          </div>
 
           {devMode && (
             <div className="mb-6 space-y-3">
               <div className="flex items-center gap-3 justify-center">
-                <label className="text-sm font-semibold text-gray-600">🖨️ Drucker:</label>
+                <label className="text-sm font-semibold text-gray-600">Drucker:</label>
                 <select
                   value={currentPrinter}
                   onChange={handlePrinterChange}
@@ -167,23 +54,12 @@ export default function PaymentPage() {
                 disabled={isPrinting || printers.length === 0}
                 className="px-8 py-3 text-white text-lg font-bold rounded-lg bg-[#1E1B4B] hover:bg-[#2d2a5e] active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPrinting ? '⏳ Wird gedruckt...' : '🖨️ BON DRUCKEN'}
+                {isPrinting ? 'Wird gedruckt...' : 'BON DRUCKEN'}
               </button>
-              {printStatus && (
-                <div
-                  className={`p-2 rounded-lg text-sm ${
-                    printStatus.type === 'success'
-                      ? 'bg-green-50 border border-green-200 text-green-700'
-                      : 'bg-red-50 border border-red-200 text-red-700'
-                  }`}
-                >
-                  {printStatus.message}
-                </div>
-              )}
             </div>
           )}
 
-          {!devMode && printStatus && (
+          {printStatus && (
             <div
               className={`mb-6 p-2 rounded-lg text-sm ${
                 printStatus.type === 'success'
@@ -206,27 +82,27 @@ export default function PaymentPage() {
       </div>
     )
   }
+
   return (
-    <div className="flex items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-8 gap-6">
+      <p className="text-2xl font-bold text-[#1e1e38]">
+        Zu zahlen: {total.toFixed(2).replace('.', ',')} €
+      </p>
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">
         <button
-          onClick={handleCardPayment}
+          onClick={() => handlePayment('Kartenzahlung')}
           className="flex flex-col items-center justify-center p-12 rounded-lg transition-all hover:scale-105 hover:shadow-xl"
           style={{ backgroundColor: '#D9DADD' }}
         >
-          <div className="mb-4">
-            <img src={CardIcon} alt="Kartenzahlung" className="w-32 h-32 object-contain" />
-          </div>
+          <img src={CardIcon} alt="Kartenzahlung" className="w-32 h-32 object-contain mb-4" />
           <span className="text-2xl font-bold text-gray-800">Kartenzahlung</span>
         </button>
         <button
-          onClick={handleCashPayment}
+          onClick={() => handlePayment('Bar')}
           className="flex flex-col items-center justify-center p-12 rounded-lg transition-all hover:scale-105 hover:shadow-xl"
           style={{ backgroundColor: '#D9DADD' }}
         >
-          <div className="mb-4">
-            <img src={CashIcon} alt="Barzahlung" className="w-32 h-32 object-contain" />
-          </div>
+          <img src={CashIcon} alt="Barzahlung" className="w-32 h-32 object-contain mb-4" />
           <span className="text-2xl font-bold text-gray-800">Barzahlung</span>
         </button>
       </div>

@@ -99,6 +99,7 @@ export default function ScanPage() {
         })
         window.api?.tapo?.flashGreen()
       } catch {
+        sessionStorage.removeItem('pendingCustomerCard')
         setScanStatus({ type: 'error', message: `Kundenkarte nicht gefunden (ID: ${barcode})` })
         window.api?.tapo?.flashRed()
       }

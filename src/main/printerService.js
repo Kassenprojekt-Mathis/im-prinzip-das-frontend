@@ -204,6 +204,17 @@ function printReceipt(receiptData) {
             .build()
         )
         builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('Einmalig einzuloesen.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder('Kein Restwert.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
         builder.addComponent(new POSTextBuilder('================================').build())
         builder.addFeed()
       }

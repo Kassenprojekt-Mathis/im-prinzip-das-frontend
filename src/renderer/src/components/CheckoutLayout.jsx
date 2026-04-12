@@ -144,6 +144,8 @@ export default function CheckoutLayout() {
     setShowEmployeeMenu(false)
   }
 
+  const pendingAgeProduct = JSON.parse(sessionStorage.getItem('pendingAgeProduct') || '{}')
+
   const handleInspectionClick = () => {
     setShowEmployeeMenu(false)
 
@@ -216,19 +218,39 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItemsList')
     if (stored && pendingProduct.id) {
       const cartList = JSON.parse(stored)
-      cartList.push({
-        type: 'manual',
-        id: pendingProduct.id,
-        name: pendingProduct.name,
-        price: 0,
-        mindestalter: pendingProduct.mindestalter
-      })
+
+      // Unterscheidung: Barcode-Produkt oder manuelles Kategorie-Produkt
+      if (pendingProduct.type === 'barcode') {
+        cartList.push({
+          type: 'barcode',
+          barcode: pendingProduct.barcode,
+          id: pendingProduct.id,
+          name: pendingProduct.name,
+          price: pendingProduct.price || pendingProduct.preis || 0,
+          discount: pendingProduct.discount || null,
+          mindestalter: pendingProduct.mindestalter
+        })
+      } else {
+        cartList.push({
+          type: 'manual',
+          id: pendingProduct.id,
+          name: pendingProduct.name,
+          price: pendingProduct.price || pendingProduct.preis || 0,
+          discount: pendingProduct.rabatt || null,
+          mindestalter: pendingProduct.mindestalter
+        })
+      }
+
       sessionStorage.setItem('cartItemsList', JSON.stringify(cartList))
     }
 
+    // Verifiziertes Alter speichern (höchstes bisheriges behalten)
+    const currentVerified = parseInt(sessionStorage.getItem('ageControlVerifiedAge') || '0')
+    const newVerified = Math.max(currentVerified, pendingProduct.mindestalter || 0)
+    sessionStorage.setItem('ageControlVerifiedAge', newVerified.toString())
+
     sessionStorage.removeItem('ageControlActive')
     sessionStorage.removeItem('pendingAgeProduct')
-    sessionStorage.setItem('ageControlCompleted', 'true')
     window.dispatchEvent(new Event('ageControlStatusChanged'))
     window.api?.tapo?.flashGreen()
   }
@@ -329,6 +351,8 @@ export default function CheckoutLayout() {
             isOpen={showAgeVerification}
             onYes={handleAgeVerified}
             onNo={handleAgeRejected}
+            productName={pendingAgeProduct.name}
+            mindestalter={pendingAgeProduct.mindestalter}
           />
 
           <InspectionFailedModal

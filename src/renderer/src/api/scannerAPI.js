@@ -29,6 +29,7 @@ export const scannerApi = {
       }
       throw new Error(`Fehler beim Abrufen des Produkts: ${response.status}`)
     }
+
     const produkt = await response.json()
 
     // Backend-Format (preis, rabatt, ...) auf Frontend-Format (price, discount, ...) mappen

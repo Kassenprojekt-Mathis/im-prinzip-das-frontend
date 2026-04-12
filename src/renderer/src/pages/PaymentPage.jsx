@@ -262,8 +262,9 @@ export default function PaymentPage() {
   return (
     <div className="flex flex-col items-center justify-center h-full p-8">
       {paymentError && (
-        <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm text-center max-w-xl">
-          Beleg konnte nicht gespeichert werden: {paymentError}
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border-2 border-red-300 text-red-700 text-center max-w-xl">
+          <p className="text-lg font-bold mb-1">Zahlung fehlgeschlagen</p>
+          <p>{paymentError}</p>
         </div>
       )}
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">

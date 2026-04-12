@@ -1,9 +1,9 @@
 const API_BASE_URL = 'http://localhost:8000'
 
 export const belegApi = {
-  async createBeleg({ kundeId, gesamtbetrag, gegebenesgeld, zahlungsmethode }) {
+  async createBeleg({ produkte, gegebenesgeld, zahlungsmethode, kundeId }) {
     const body = {
-      gesamtbetrag,
+      produkte,
       gegebenes_geld: gegebenesgeld,
       zahlungsmethode,
       ...(kundeId ? { kunde_id: kundeId } : {})

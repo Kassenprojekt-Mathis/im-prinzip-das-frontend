@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useDevMode } from '../context/DevModeContext'
 import { useVoucher } from '../hooks/useVoucher'
 import { printerApi } from '../api/printerAPI'
-import { productApi } from '../api/productAPI'
 import { belegApi } from '../api/receiptAPI'
 import { ecoApi } from '../api/ecoApi'
 import CardIcon from '../assets/Icons/Card.png'
@@ -41,6 +40,7 @@ export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [ecoScore, setEcoScore] = useState(null)
   const [voucher, setVoucher] = useState(null)
+  const [paymentError, setPaymentError] = useState(null)
   const voucherRef = useRef(null)
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState(null)
@@ -85,8 +85,21 @@ export default function PaymentPage() {
   }
 
   const processPayment = async (method) => {
+    setPaymentError(null)
     const customerCardRaw = sessionStorage.getItem('customerCard')
     const kundeId = customerCardRaw ? parseInt(customerCardRaw, 10) : null
+
+    // Produkte für Backend aufbereiten: { produkt_id, menge }
+    const produkteMap = {}
+    for (const item of items) {
+      if (item.id) {
+        if (produkteMap[item.id]) {
+          produkteMap[item.id].menge += item.quantity || 1
+        } else {
+          produkteMap[item.id] = { produkt_id: item.id, menge: item.quantity || 1 }
+        }
+      }
+    }
 
     try {
       await einloesen(total)
@@ -96,13 +109,14 @@ export default function PaymentPage() {
 
     try {
       await belegApi.createBeleg({
-        kundeId,
-        gesamtbetrag: finalTotal,
+        produkte: Object.values(produkteMap),
         gegebenesgeld: finalTotal,
-        zahlungsmethode: method
+        zahlungsmethode: method,
+        kundeId
       })
     } catch (err) {
       console.error('Fehler beim Erstellen des Belegs:', err)
+      setPaymentError(err.message || 'Beleg konnte nicht erstellt werden')
     }
 
     if (kundeId && !isNaN(kundeId)) {
@@ -137,32 +151,13 @@ export default function PaymentPage() {
     }
   }
 
-  const updateStock = async () => {
-    try {
-      const stockItems = items.map((item) => ({
-        id: item.id || null,
-        barcode: item.barcode || null,
-        quantity: item.quantity || 1
-      }))
-
-      if (stockItems.length > 0) {
-        await productApi.reduceStock(stockItems)
-        console.log('Lagerbestand erfolgreich aktualisiert')
-      }
-    } catch (error) {
-      console.error('Fehler beim Aktualisieren des Lagerbestands:', error)
-    }
-  }
-
   const handleCardPayment = async () => {
     setPaymentMethod('Kartenzahlung')
-    await updateStock()
     await processPayment('Kartenzahlung')
     setPaymentComplete(true)
   }
   const handleCashPayment = async () => {
     setPaymentMethod('Bar')
-    await updateStock()
     await processPayment('Bar')
     setPaymentComplete(true)
   }
@@ -265,7 +260,12 @@ export default function PaymentPage() {
     )
   }
   return (
-    <div className="flex items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-8">
+      {paymentError && (
+        <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm text-center max-w-xl">
+          Beleg konnte nicht gespeichert werden: {paymentError}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-8 max-w-3xl w-full">
         <button
           onClick={handleCardPayment}

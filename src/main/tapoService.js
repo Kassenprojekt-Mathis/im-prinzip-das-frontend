@@ -155,4 +155,19 @@ async function getStatus() {
   }
 }
 
-export { flashGreen, flashRed, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }
+/**
+ * Set the bulb to blue – used when a customer is waiting for an employee
+ * (help button, unknown barcode, random inspection, age verification).
+ * The bulb stays blue until the employee logs in and it is reset to white.
+ */
+async function setBlue() {
+  try {
+    await setColor('blue')
+    return { success: true }
+  } catch (err) {
+    console.error('Tapo setBlue Fehler:', err.message)
+    return { success: false, error: err.message }
+  }
+}
+
+export { flashGreen, flashRed, setBlue, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }

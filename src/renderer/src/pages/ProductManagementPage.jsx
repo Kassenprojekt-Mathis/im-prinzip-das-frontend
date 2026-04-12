@@ -59,6 +59,7 @@ export default function ProductManagementPage() {
       }
     }
     fetchCategories()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProducts()
   }, [])
 

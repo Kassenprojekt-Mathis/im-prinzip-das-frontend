@@ -1,179 +1,15 @@
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { productApi } from '../api/productAPI'
-import { categoryApi } from '../api/categoryAPI'
-
-const INITIAL_MANUAL_INPUT = {
-  id: '',
-  name: '',
-  preis: '',
-  mwst_satz: '',
-  lagerbestand: '',
-  kategorie_id: '',
-  rabatt: '0',
-  mindestalter: '0',
-  bild: ''
-}
+import { useRef, useEffect } from 'react'
+import { useProductManagementViewModel } from '../hooks/useProductManagement'
 
 export default function ProductManagementPage() {
-  const navigate = useNavigate()
+  const vm = useProductManagementViewModel()
   const barcodeRef = useRef(null)
 
-  const [barcodeInput, setBarcodeInput] = useState('')
-  const [manualInput, setManualInput] = useState(INITIAL_MANUAL_INPUT)
-  const [categories, setCategories] = useState([])
-  const [products, setProducts] = useState([])
-  const [message, setMessage] = useState(null)
-  const [activeTab, setActiveTab] = useState('scan')
-  const [editingProduct, setEditingProduct] = useState(null)
-  const [searchProduct, setSearchProduct] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
-  const [idFromScan, setIdFromScan] = useState(false)
-
-  const showMessage = (type, text, duration = 3000) => {
-    setMessage({ type, text })
-    setTimeout(() => setMessage(null), duration)
-  }
-
-  const resetManualInput = () => {
-    setManualInput(INITIAL_MANUAL_INPUT)
-    setIdFromScan(false)
-  }
-
-  const loadProducts = async () => {
-    try {
-      const data = await productApi.getAllProducts()
-      setProducts(data)
-    } catch (error) {
-      console.error('Fehler beim Laden der Produkte:', error)
-    }
-  }
-
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await categoryApi.getAllCategories()
-        setCategories(data)
-      } catch (error) {
-        console.error('Fehler beim Laden der Kategorien:', error)
-      }
-    }
-    fetchCategories()
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadProducts()
-  }, [])
-
-  useEffect(() => {
-    if (activeTab === 'scan' && !editingProduct && barcodeRef.current) {
+    if (vm.activeTab === 'scan' && !vm.editingProduct && barcodeRef.current) {
       barcodeRef.current.focus()
     }
-  }, [activeTab, editingProduct])
-
-  const handleBarcodeScan = () => {
-    if (!barcodeInput.trim()) return
-    const barcode = barcodeInput.trim()
-
-    // Barcode als ID ins Formular übernehmen und zum manuellen Tab wechseln
-    setManualInput({ ...INITIAL_MANUAL_INPUT, id: barcode })
-    setActiveTab('manual')
-    setBarcodeInput('')
-    setIdFromScan(true)
-    showMessage(
-      'success',
-      `Barcode ${barcode} als ID übernommen – bitte restliche Felder ausfüllen`
-    )
-  }
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault()
-
-    if (
-      !manualInput.name ||
-      !manualInput.preis ||
-      !manualInput.mwst_satz ||
-      !manualInput.lagerbestand ||
-      !manualInput.kategorie_id
-    ) {
-      showMessage('error', 'Bitte alle Pflichtfelder ausfüllen')
-      return
-    }
-
-    if (!editingProduct && !manualInput.id) {
-      showMessage('error', 'Bitte zuerst einen Barcode scannen oder eine ID eingeben')
-      return
-    }
-
-    const produktDaten = {
-      name: manualInput.name,
-      preis: parseFloat(manualInput.preis),
-      mwst_satz: parseFloat(manualInput.mwst_satz),
-      lagerbestand: parseInt(manualInput.lagerbestand),
-      kategorie_id: parseInt(manualInput.kategorie_id),
-      rabatt: parseFloat(manualInput.rabatt || '0'),
-      mindestalter: parseInt(manualInput.mindestalter || '0'),
-      bild: manualInput.bild || null,
-      ...(!editingProduct && manualInput.id && { id: parseInt(manualInput.id) })
-    }
-
-    try {
-      if (editingProduct) {
-        await productApi.updateProduct(editingProduct.id, produktDaten)
-      } else {
-        await productApi.createProduct(produktDaten)
-      }
-      await loadProducts()
-      showMessage('success', editingProduct ? 'Produkt aktualisiert' : 'Produkt hinzugefügt')
-      setEditingProduct(null)
-      resetManualInput()
-    } catch (error) {
-      showMessage('error', error.message || 'Fehler')
-    }
-  }
-
-  const handleDelete = async (produktId) => {
-    if (!window.confirm('Möchten Sie dieses Produkt wirklich löschen?')) return
-
-    try {
-      await productApi.deleteProduct(produktId)
-      await loadProducts()
-      showMessage('success', 'Produkt gelöscht')
-    } catch (error) {
-      showMessage('error', error.message || 'Fehler beim Löschen')
-    }
-  }
-
-  const handleEdit = (product) => {
-    setEditingProduct(product)
-    setManualInput({
-      name: product.name,
-      preis: product.preis.toString(),
-      mwst_satz: product.mwst_satz.toString(),
-      lagerbestand: product.lagerbestand.toString(),
-      kategorie_id: product.kategorie_id.toString(),
-      rabatt: product.rabatt.toString(),
-      mindestalter: product.mindestalter.toString(),
-      bild: product.bild || ''
-    })
-    setActiveTab('manual')
-  }
-
-  const handleToggleAktiv = async (product) => {
-    try {
-      await productApi.toggleProductActive(product.id, !product.aktiv)
-      await loadProducts()
-      showMessage('success', product.aktiv ? 'Produkt deaktiviert' : 'Produkt aktiviert')
-    } catch (error) {
-      showMessage('error', error.message || 'Fehler beim Aktualisieren')
-    }
-  }
-
-  const filteredProducts = products
-    .filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchProduct.toLowerCase()) &&
-        (filterCategory === '' || p.kategorie_id.toString() === filterCategory)
-    )
-    .sort((a, b) => b.id - a.id)
+  }, [vm.activeTab, vm.editingProduct])
 
   return (
     <div className="min-h-screen bg-[#F0F4F8] p-6">
@@ -182,22 +18,22 @@ export default function ProductManagementPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Produktverwaltung</h1>
         </div>
         <button
-          onClick={() => navigate('/scan')}
+          onClick={vm.handleBack}
           className="px-6 py-2 bg-[#E1E1F2] text-gray-700 font-semibold rounded hover:bg-[#D1D1E2]"
         >
           ← Zurück zur Kasse
         </button>
       </div>
 
-      {message && (
+      {vm.message && (
         <div
           className={`mb-4 p-3 rounded-lg text-sm ${
-            message.type === 'success'
+            vm.message.type === 'success'
               ? 'bg-green-50 border border-green-200 text-green-700'
               : 'bg-red-50 border border-red-200 text-red-700'
           }`}
         >
-          {message.text}
+          {vm.message.text}
         </div>
       )}
 
@@ -206,25 +42,25 @@ export default function ProductManagementPage() {
         {/* LINKE SPALTE: Produktliste */}
         <div className="flex flex-col bg-white rounded-lg border-2 border-gray-300 p-4">
           <h2 className="text-lg font-bold text-gray-800 mb-3">
-            Aktuelle Produkte ({products.length})
+            Aktuelle Produkte ({vm.products.length})
           </h2>
 
           {/* Suchfeld und Kategorie-Filter */}
           <div className="mb-3 space-y-2">
             <input
               type="text"
-              value={searchProduct}
-              onChange={(e) => setSearchProduct(e.target.value)}
+              value={vm.searchProduct}
+              onChange={(e) => vm.setSearchProduct(e.target.value)}
               placeholder="Produkt suchen..."
               className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
             />
             <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+              value={vm.filterCategory}
+              onChange={(e) => vm.setFilterCategory(e.target.value)}
               className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
             >
               <option value="">Alle Kategorien</option>
-              {categories.map((cat) => (
+              {vm.categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.bezeichnung}
                 </option>
@@ -233,13 +69,13 @@ export default function ProductManagementPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2">
-            {filteredProducts.length === 0 ? (
+            {vm.filteredProducts.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
-                {searchProduct ? 'Keine Produkte gefunden' : 'Keine Produkte vorhanden'}
+                {vm.searchProduct ? 'Keine Produkte gefunden' : 'Keine Produkte vorhanden'}
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {filteredProducts.map((product) => (
+                {vm.filteredProducts.map((product) => (
                   <div
                     key={product.id}
                     className={`p-2 rounded border border-gray-200 ${
@@ -263,7 +99,7 @@ export default function ProductManagementPage() {
                         </p>
                         <p className="text-xs text-gray-600">
                           Kategorie:{' '}
-                          {categories.find((c) => c.id === product.kategorie_id)?.bezeichnung ||
+                          {vm.categories.find((c) => c.id === product.kategorie_id)?.bezeichnung ||
                             `ID: ${product.kategorie_id}`}
                         </p>
                         <p className="text-xs text-gray-600">Lager: {product.lagerbestand}</p>
@@ -273,13 +109,13 @@ export default function ProductManagementPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-1">
                         <button
-                          onClick={() => handleEdit(product)}
+                          onClick={() => vm.handleEdit(product)}
                           className="py-1 bg-[#948BB8] text-white text-xs rounded hover:opacity-90"
                         >
                           Edit
                         </button>
                         <button
-                          onClick={() => handleToggleAktiv(product)}
+                          onClick={() => vm.handleToggleAktiv(product)}
                           className={`py-1 text-white text-xs rounded hover:opacity-90 ${
                             product.aktiv ? 'bg-green-500' : 'bg-orange-500'
                           }`}
@@ -287,7 +123,7 @@ export default function ProductManagementPage() {
                           {product.aktiv ? 'Aktiv' : 'Deaktiviert'}
                         </button>
                         <button
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => vm.handleDelete(product.id)}
                           className="py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
                         >
                           Del
@@ -305,14 +141,11 @@ export default function ProductManagementPage() {
         <div className="flex flex-col bg-white rounded-lg border-2 border-gray-300 p-4">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-bold text-gray-800">
-              {editingProduct ? 'Produkt bearbeiten' : 'Neues Produkt'}
+              {vm.editingProduct ? 'Produkt bearbeiten' : 'Neues Produkt'}
             </h2>
-            {editingProduct && (
+            {vm.editingProduct && (
               <button
-                onClick={() => {
-                  setEditingProduct(null)
-                  resetManualInput()
-                }}
+                onClick={vm.handleCancelEdit}
                 className="text-sm px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
               >
                 Abbrechen
@@ -322,20 +155,22 @@ export default function ProductManagementPage() {
 
           <div className="flex-1 overflow-y-auto">
             {/* Tab-Navigation nur wenn nicht im Edit-Modus */}
-            {!editingProduct && (
+            {!vm.editingProduct && (
               <div className="flex gap-2 mb-4">
                 <button
-                  onClick={() => setActiveTab('scan')}
+                  onClick={() => vm.setActiveTab('scan')}
                   className={`flex-1 py-2 text-sm font-semibold rounded transition-colors ${
-                    activeTab === 'scan' ? 'bg-[#948BB8] text-white' : 'bg-[#E1E1F2] text-gray-700'
+                    vm.activeTab === 'scan'
+                      ? 'bg-[#948BB8] text-white'
+                      : 'bg-[#E1E1F2] text-gray-700'
                   }`}
                 >
                   Barcode scannen
                 </button>
                 <button
-                  onClick={() => setActiveTab('manual')}
+                  onClick={() => vm.setActiveTab('manual')}
                   className={`flex-1 py-2 text-sm font-semibold rounded transition-colors ${
-                    activeTab === 'manual'
+                    vm.activeTab === 'manual'
                       ? 'bg-[#948BB8] text-white'
                       : 'bg-[#E1E1F2] text-gray-700'
                   }`}
@@ -346,21 +181,21 @@ export default function ProductManagementPage() {
             )}
 
             {/* Scan-Tab */}
-            {activeTab === 'scan' && !editingProduct && (
+            {vm.activeTab === 'scan' && !vm.editingProduct && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Barcode</label>
                 <div className="flex gap-2">
                   <input
                     ref={barcodeRef}
                     type="text"
-                    value={barcodeInput}
-                    onChange={(e) => setBarcodeInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleBarcodeScan()}
+                    value={vm.barcodeInput}
+                    onChange={(e) => vm.setBarcodeInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && vm.handleBarcodeScan()}
                     placeholder="Barcode scannen..."
                     className="flex-1 px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
                   />
                   <button
-                    onClick={handleBarcodeScan}
+                    onClick={vm.handleBarcodeScan}
                     className="px-4 py-2 bg-[#948BB8] text-white font-semibold rounded hover:opacity-90"
                   >
                     +
@@ -370,30 +205,30 @@ export default function ProductManagementPage() {
             )}
 
             {/* Manual-Tab */}
-            {(activeTab === 'manual' || editingProduct) && (
-              <form onSubmit={handleFormSubmit} className="space-y-3">
+            {(vm.activeTab === 'manual' || vm.editingProduct) && (
+              <form onSubmit={vm.handleFormSubmit} className="space-y-3">
                 {/* ID/Barcode-Feld – nur bei Neuanlage sichtbar */}
-                {!editingProduct && (
+                {!vm.editingProduct && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
                       ID / Barcode *
                     </label>
                     <input
                       type="text"
-                      value={manualInput.id}
-                      onChange={(e) => setManualInput({ ...manualInput, id: e.target.value })}
+                      value={vm.manualInput.id}
+                      onChange={(e) => vm.setManualInput({ ...vm.manualInput, id: e.target.value })}
                       placeholder="Barcode scannen oder ID eingeben"
                       required
-                      readOnly={idFromScan}
+                      readOnly={vm.idFromScan}
                       className={`w-full px-3 py-2 text-sm border-2 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8] ${
-                        manualInput.id
+                        vm.manualInput.id
                           ? 'border-green-400 bg-green-50 font-semibold'
                           : 'border-gray-300'
                       }`}
                     />
-                    {manualInput.id && (
+                    {vm.manualInput.id && (
                       <p className="text-xs text-green-600 mt-1">
-                        ✓ Barcode {manualInput.id} übernommen
+                        ✓ Barcode {vm.manualInput.id} übernommen
                       </p>
                     )}
                   </div>
@@ -404,8 +239,10 @@ export default function ProductManagementPage() {
                     <label className="block text-xs font-semibold text-gray-700 mb-1">Name *</label>
                     <input
                       type="text"
-                      value={manualInput.name}
-                      onChange={(e) => setManualInput({ ...manualInput, name: e.target.value })}
+                      value={vm.manualInput.name}
+                      onChange={(e) =>
+                        vm.setManualInput({ ...vm.manualInput, name: e.target.value })
+                      }
                       placeholder="Bio-Apfel"
                       required
                       className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
@@ -418,8 +255,10 @@ export default function ProductManagementPage() {
                     <input
                       type="number"
                       step="0.01"
-                      value={manualInput.preis}
-                      onChange={(e) => setManualInput({ ...manualInput, preis: e.target.value })}
+                      value={vm.manualInput.preis}
+                      onChange={(e) =>
+                        vm.setManualInput({ ...vm.manualInput, preis: e.target.value })
+                      }
                       placeholder="1.99"
                       required
                       className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
@@ -433,9 +272,9 @@ export default function ProductManagementPage() {
                       MwSt (%) *
                     </label>
                     <select
-                      value={manualInput.mwst_satz}
+                      value={vm.manualInput.mwst_satz}
                       onChange={(e) =>
-                        setManualInput({ ...manualInput, mwst_satz: e.target.value })
+                        vm.setManualInput({ ...vm.manualInput, mwst_satz: e.target.value })
                       }
                       required
                       className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
@@ -451,9 +290,9 @@ export default function ProductManagementPage() {
                     </label>
                     <input
                       type="number"
-                      value={manualInput.lagerbestand}
+                      value={vm.manualInput.lagerbestand}
                       onChange={(e) =>
-                        setManualInput({ ...manualInput, lagerbestand: e.target.value })
+                        vm.setManualInput({ ...vm.manualInput, lagerbestand: e.target.value })
                       }
                       placeholder="100"
                       required
@@ -467,15 +306,15 @@ export default function ProductManagementPage() {
                     Kategorie *
                   </label>
                   <select
-                    value={manualInput.kategorie_id}
+                    value={vm.manualInput.kategorie_id}
                     onChange={(e) =>
-                      setManualInput({ ...manualInput, kategorie_id: e.target.value })
+                      vm.setManualInput({ ...vm.manualInput, kategorie_id: e.target.value })
                     }
                     required
                     className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
                   >
                     <option value="">-- Auswählen --</option>
-                    {categories.map((cat) => (
+                    {vm.categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.bezeichnung}
                       </option>
@@ -491,8 +330,10 @@ export default function ProductManagementPage() {
                     <input
                       type="number"
                       step="0.01"
-                      value={manualInput.rabatt}
-                      onChange={(e) => setManualInput({ ...manualInput, rabatt: e.target.value })}
+                      value={vm.manualInput.rabatt}
+                      onChange={(e) =>
+                        vm.setManualInput({ ...vm.manualInput, rabatt: e.target.value })
+                      }
                       placeholder="0"
                       className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
                     />
@@ -503,9 +344,9 @@ export default function ProductManagementPage() {
                     </label>
                     <input
                       type="number"
-                      value={manualInput.mindestalter}
+                      value={vm.manualInput.mindestalter}
                       onChange={(e) =>
-                        setManualInput({ ...manualInput, mindestalter: e.target.value })
+                        vm.setManualInput({ ...vm.manualInput, mindestalter: e.target.value })
                       }
                       placeholder="0"
                       className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
@@ -519,15 +360,15 @@ export default function ProductManagementPage() {
                   </label>
                   <input
                     type="url"
-                    value={manualInput.bild}
-                    onChange={(e) => setManualInput({ ...manualInput, bild: e.target.value })}
+                    value={vm.manualInput.bild}
+                    onChange={(e) => vm.setManualInput({ ...vm.manualInput, bild: e.target.value })}
                     placeholder="https://example.com/bild.jpg"
                     className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#948BB8]"
                   />
-                  {manualInput.bild && (
+                  {vm.manualInput.bild && (
                     <div className="mt-2">
                       <img
-                        src={manualInput.bild}
+                        src={vm.manualInput.bild}
                         alt="Vorschau"
                         className="w-20 h-20 object-cover rounded border-2 border-gray-300"
                         onError={(e) => {
@@ -542,7 +383,7 @@ export default function ProductManagementPage() {
                   type="submit"
                   className="w-full px-4 py-3 bg-[#948BB8] text-white font-semibold rounded hover:opacity-90"
                 >
-                  {editingProduct ? 'Aktualisieren' : 'Hinzufügen'}
+                  {vm.editingProduct ? 'Aktualisieren' : 'Hinzufügen'}
                 </button>
               </form>
             )}

@@ -12,12 +12,5 @@ export const kundeApi = {
     return await response.json()
   },
 
-  // Ecopunkte eines Kunden abrufen
-  async getEcopunkte(id) {
-    const response = await fetch(`${API_BASE_URL}/api/kunde/${id}/ecopunkte`)
-    if (!response.ok) {
-      throw new Error('Ecopunkte konnten nicht geladen werden')
-    }
-    return await response.json()
-  }
+
 }

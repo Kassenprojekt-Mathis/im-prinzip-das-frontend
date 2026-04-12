@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import { usePaymentViewModel } from '../hooks/usePayment'
+import { usePayment } from '../hooks/usePayment'
 import CardIcon from '../assets/Icons/Card.png'
 import CashIcon from '../assets/Icons/Cash.png'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -166,7 +166,7 @@ PaymentSelectionView.propTypes = {
 }
 
 export default function PaymentPage() {
-  const vm = usePaymentViewModel()
+  const vm = usePayment()
 
   if (vm.paymentComplete) {
     return (

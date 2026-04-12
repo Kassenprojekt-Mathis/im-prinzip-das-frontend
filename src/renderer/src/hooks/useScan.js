@@ -13,7 +13,7 @@ import {
   buildPendingAgeProduct
 } from '../models/scanModel'
 
-export function useScanViewModel() {
+export function useScan() {
   const navigate = useNavigate()
   const devMode = useDevMode()
 

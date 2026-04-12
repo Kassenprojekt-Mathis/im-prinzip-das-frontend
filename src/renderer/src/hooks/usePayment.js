@@ -13,7 +13,7 @@ import {
   getCustomerId
 } from '../models/paymentModel'
 
-export function usePaymentViewModel() {
+export function usePayment() {
   const navigate = useNavigate()
   const location = useLocation()
   const devMode = useDevMode()

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import HelpModal from '../components/HelpModal'
-import { useScanViewModel } from '../hooks/useScan'
+import { useScan } from '../hooks/useScan'
 import apfel from '../../../../resources/apfel.png'
 import karotte from '../../../../resources/karotte.png'
 import croissant from '../../../../resources/croissant.png'
@@ -15,7 +15,7 @@ const categoryImages = {
 }
 
 export default function ScanPage() {
-  const vm = useScanViewModel()
+  const vm = useScan()
   const barcodeRef = useRef(null)
 
   const focusBarcodeInput = useCallback(() => {

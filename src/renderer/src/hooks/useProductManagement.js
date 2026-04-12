@@ -16,7 +16,7 @@ const INITIAL_MANUAL_INPUT = {
   bild: ''
 }
 
-export function useProductManagementViewModel() {
+export function useProductManagement() {
   const navigate = useNavigate()
 
   const [barcodeInput, setBarcodeInput] = useState('')

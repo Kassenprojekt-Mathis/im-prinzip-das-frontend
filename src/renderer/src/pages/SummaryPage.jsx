@@ -1,11 +1,11 @@
-import { useSummaryViewModel } from '../hooks/useSummary'
+import { useSummary } from '../hooks/useSummary'
 import CustomerCardModal from '../components/CustomerCardModal'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
 import HandsIcon from '../assets/Icons/Hands.png'
 import WarningIcon from '../assets/Icons/Warning.png'
 
 export default function SummaryPage() {
-  const vm = useSummaryViewModel()
+  const vm = useSummary()
 
   return (
     <div className="relative flex flex-col h-full items-center justify-center">

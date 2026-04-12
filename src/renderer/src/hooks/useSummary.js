@@ -12,7 +12,7 @@ import {
   shouldTriggerInspection
 } from '../models/summaryModel'
 
-export function useSummaryViewModel() {
+export function useSummary() {
   const navigate = useNavigate()
   const location = useLocation()
 

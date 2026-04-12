@@ -1,8 +1,8 @@
 import { useRef, useEffect } from 'react'
-import { useProductManagementViewModel } from '../hooks/useProductManagement'
+import { useProductManagement } from '../hooks/useProductManagement'
 
 export default function ProductManagementPage() {
-  const vm = useProductManagementViewModel()
+  const vm = useProductManagement()
   const barcodeRef = useRef(null)
 
   useEffect(() => {

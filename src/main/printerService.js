@@ -74,43 +74,9 @@ function getCurrentPrinter() {
  * @param {string} [receiptData.footer]
  */
 
-//zu Testzwecken wird die Ausgabe im Terminal simuliert, da der Drucker nicht immer verfügbar ist.
 function printReceipt(receiptData) {
   return new Promise((resolve, reject) => {
     try {
-      // ── Terminal-Vorschau ──
-      const sep = '-'.repeat(32)
-      const lines = [
-        '',
-        sep,
-        '           /\\_/\\',
-        '         ( o . o )',
-        '',
-        `         ${receiptData.storeName || 'Im Prinzip'}`,
-        sep,
-      ]
-      for (const item of receiptData.items || []) {
-        const qty = item.quantity || 1
-        const name = qty > 1 ? `${qty}x ${item.name}` : item.name
-        const price = ((item.price || 0) * qty).toFixed(2) + ' EUR'
-        const pad = Math.max(1, 32 - name.length - price.length)
-        lines.push(name + ' '.repeat(pad) + price)
-      }
-      lines.push(sep)
-      lines.push('SUMME:'.padEnd(22) + receiptData.total.toFixed(2) + ' EUR')
-      if (receiptData.paymentMethod) lines.push(`Bezahlt mit: ${receiptData.paymentMethod}`)
-      if (receiptData.voucher) {
-        lines.push('='.repeat(32))
-        lines.push('       *** ECO-GUTSCHEIN ***')
-        lines.push(`       Code: ${receiptData.voucher.code}`)
-        lines.push(`       Wert: ${parseFloat(receiptData.voucher.wert).toFixed(2)} EUR`)
-        lines.push('='.repeat(32))
-      }
-      lines.push(sep)
-      lines.push('')
-      console.log(lines.join('\n'))
-      // ── Ende Terminal-Vorschau ──
-
       const printer = new POSPrinter(currentPrinterName)
 
       const builder = new POSReceiptBuilder()

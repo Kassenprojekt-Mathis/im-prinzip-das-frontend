@@ -1,17 +1,6 @@
 const API_BASE_URL = 'http://localhost:8000'
 
 export const receiptApi = {
-  /**
-   * Erstellt einen Beleg (Kassiervorgang abschließen).
-   * @param {Object} params
-   * @param {Array<{produkt_id: number, menge: number}>} params.produkte
-   * @param {number} params.gegebenesgeld
-   * @param {string} params.zahlungsmethode - "bar" oder "karte"
-   * @param {number|null} [params.kundeId] - Kunden-ID (optional)
-   * @param {boolean} [params.alterskontrolleBestaetigt] - true wenn Alterskontrolle bestätigt
-   * @param {string} [params.gutscheinCode] - Gutschein-Code (optional)
-   * @returns {Promise<Object>} Erstellter Beleg
-   */
   async createReceipt({
     produkte,
     gegebenesgeld,

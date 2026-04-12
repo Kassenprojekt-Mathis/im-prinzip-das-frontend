@@ -1,10 +1,3 @@
-//        ₍^. .^₎⟆
-//
-//            /\_/\
-//        = ( • . • ) =
-//            /     \
-//
-
 import {
   POSPrinter,
   POSReceiptBuilder,

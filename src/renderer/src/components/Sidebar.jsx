@@ -1,7 +1,6 @@
 export default function Sidebar({
   items = [],
   customerCard,
-  appliedVoucher,
   editable = false,
   onUpdateQuantity,
   onRemoveItem
@@ -29,8 +28,7 @@ export default function Sidebar({
     0
   )
 
-  const voucherDiscount = appliedVoucher ? parseFloat(appliedVoucher.discountAmount) : 0
-  const total = totalBeforeDiscount - totalDiscount - voucherDiscount
+  const total = totalBeforeDiscount - totalDiscount
 
   const handleIncrease = (item) => {
     const key = item.barcode || item.name
@@ -120,16 +118,6 @@ export default function Sidebar({
             Kundenkonto {customerCard} erfasst!
           </p>
         )}
-        {appliedVoucher && (
-          <div className="flex justify-between gap-2 mt-3 text-green-700">
-            <span className="text-base font-semibold truncate">
-              Gutschein {appliedVoucher.code}
-            </span>
-            <span className="text-base font-semibold whitespace-nowrap">
-              -{fmt(voucherDiscount)} €
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="bg-[#EBECEF] border-t-[6px] border-[#D9DADD] p-6 flex flex-col justify-center min-h-[5rem]">
@@ -137,9 +125,9 @@ export default function Sidebar({
           <span className="text-2xl font-black tracking-tight">SUMME:</span>
           <span className="text-3xl font-bold">{fmt(total)} €</span>
         </div>
-        {(totalDiscount > 0 || voucherDiscount > 0) && (
+        {totalDiscount > 0 && (
           <p className="text-center font-extrabold text-lg mt-1 tracking-wide">
-            SIE HABEN <span className="text-[#4338CA]">{fmt(totalDiscount + voucherDiscount)} €</span> GESPART!
+            SIE HABEN <span className="text-[#4338CA]">{fmt(totalDiscount)} €</span> GESPART!
           </p>
         )}
       </div>

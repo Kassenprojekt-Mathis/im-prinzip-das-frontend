@@ -25,10 +25,6 @@ export default function CheckoutLayout() {
   const [showEmployeeMenu, setShowEmployeeMenu] = useState(false)
   const [cartItems, setCartItems] = useState([])
   const [customerCard, setCustomerCard] = useState(sessionStorage.getItem('customerCard') || '')
-  const [appliedVoucher, setAppliedVoucher] = useState(() => {
-    const stored = sessionStorage.getItem('appliedVoucher')
-    return stored ? JSON.parse(stored) : null
-  })
 
   const isSummary = location.pathname.includes('/summary')
 
@@ -39,8 +35,6 @@ export default function CheckoutLayout() {
     const stored = sessionStorage.getItem('cartItems')
     setCartItems(stored ? JSON.parse(stored) : [])
     setCustomerCard(sessionStorage.getItem('customerCard') || '')
-    const storedVoucher = sessionStorage.getItem('appliedVoucher')
-    setAppliedVoucher(storedVoucher ? JSON.parse(storedVoucher) : null)
   }, [])
 
   useEffect(() => {
@@ -368,7 +362,6 @@ export default function CheckoutLayout() {
           <Sidebar
             items={cartItems}
             customerCard={customerCard}
-            appliedVoucher={appliedVoucher}
             editable={isSummary}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}

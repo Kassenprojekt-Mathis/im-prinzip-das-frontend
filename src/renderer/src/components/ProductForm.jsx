@@ -1,3 +1,5 @@
+//comnponent for product form in ProductManagementPage.jsx
+
 import PropTypes from 'prop-types'
 
 export default function ProductForm({

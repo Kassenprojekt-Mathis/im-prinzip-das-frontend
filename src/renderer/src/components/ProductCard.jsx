@@ -1,3 +1,5 @@
+//component for product card in ProductManagementPage.jsx
+
 import PropTypes from 'prop-types'
 
 export default function ProductCard({ product, categories, onEdit, onToggleAktiv, onDelete }) {

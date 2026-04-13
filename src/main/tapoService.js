@@ -105,17 +105,18 @@ async function flashGreen(duration = 2000) {
 }
 
 /**
- * for unsuccessful scan -> flash the bulb red for a duration, then return to white
+ * for unsuccessful scan -> flash the bulb red for a duration, then return to returnColor
  * @param {number} duration
+ * @param {string} returnColor - color to return to after the flash (default: 'white')
  */
-async function flashRed(duration = 2000) {
+async function flashRed(duration = 2000, returnColor = 'white') {
   try {
     await setColor('red')
     setTimeout(async () => {
       try {
-        await setColor('white')
+        await setColor(returnColor)
       } catch (err) {
-        console.error('Tapo: Fehler beim Zurücksetzen auf Weiß:', err.message)
+        console.error('Tapo: Fehler beim Zurücksetzen nach flashRed:', err.message)
       }
     }, duration)
     return { success: true }

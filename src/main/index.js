@@ -97,8 +97,8 @@ app.whenReady().then(() => {
     return await flashGreen()
   })
 
-  ipcMain.handle('tapo:flashRed', async () => {
-    return await flashRed()
+  ipcMain.handle('tapo:flashRed', async (_event, returnColor) => {
+    return await flashRed(2000, returnColor)
   })
 
   ipcMain.handle('tapo:setBlue', async () => {

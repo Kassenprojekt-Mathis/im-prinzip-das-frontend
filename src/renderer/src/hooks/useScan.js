@@ -148,7 +148,7 @@ export function useScan() {
       window.api?.tapo?.flashGreen()
     } catch {
       setScanStatus({ type: 'error', message: `Unbekannt (${trimmed}) – Hilfe angefordert` })
-      window.api?.tapo?.flashRed()
+      window.api?.tapo?.flashRed('blue')
       setHelpModalOpen(true)
     }
   }

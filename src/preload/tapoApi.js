@@ -3,8 +3,8 @@ import { ipcRenderer } from 'electron'
 export const tapoApi = {
   /** Blinkt grün (bei erfolgreichem Scan) */
   flashGreen: () => ipcRenderer.invoke('tapo:flashGreen'),
-  /** Blinkt rot (bei Scan-Fehler) */
-  flashRed: () => ipcRenderer.invoke('tapo:flashRed'),
+  /** Blinkt rot (bei Scan-Fehler), returnColor bestimmt die Farbe danach (default: 'white') */
+  flashRed: (returnColor) => ipcRenderer.invoke('tapo:flashRed', returnColor),
   /** Setzt die Lampe auf Blau (Kunde wartet auf Mitarbeiter) */
   setBlue: () => ipcRenderer.invoke('tapo:setBlue'),
   /** Setzt die Lampe auf Weiß (Normalbetrieb / Mitarbeiter angemeldet) */

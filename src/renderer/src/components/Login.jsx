@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import Modal from './Modal'
 import PropTypes from 'prop-types'
 import PersonIcon from '../assets/Icons/Person.png'
@@ -12,16 +11,9 @@ export default function Login({
   employeeList,
   isLoading,
   error,
-  onLoadEmployees,
   onAuth,
   onCancel
 }) {
-  useEffect(() => {
-    if (isOpen) {
-      onLoadEmployees()
-    }
-  }, [isOpen, onLoadEmployees])
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !isLoading) {
       onAuth()
@@ -114,7 +106,6 @@ Login.propTypes = {
   employeeList: PropTypes.array.isRequired,
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.string.isRequired,
-  onLoadEmployees: PropTypes.func.isRequired,
   onAuth: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired
 }

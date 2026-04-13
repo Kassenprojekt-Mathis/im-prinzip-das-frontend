@@ -106,7 +106,6 @@ export default function CheckoutLayout() {
             employeeList={vm.loginAuth.employeeList}
             isLoading={vm.loginAuth.isLoading}
             error={vm.loginAuth.error}
-            onLoadEmployees={vm.loginAuth.loadEmployees}
             onAuth={() => vm.loginAuth.login(vm.handleLoginSuccess)}
             onCancel={() => vm.loginAuth.cancelLogin(vm.handleLoginCancel)}
           />

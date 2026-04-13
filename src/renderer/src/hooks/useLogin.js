@@ -1,5 +1,5 @@
 // ViewModel für Login
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { userApi } from '../api/userAPI'
 
 export function useLogin() {
@@ -9,8 +9,7 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Mitarbeiter-Liste vom Backend
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       const data = await userApi.getUsers()
       setEmployeeList(data)
@@ -18,7 +17,11 @@ export function useLogin() {
       console.error('Fehler beim Laden der Mitarbeiter:', err)
       setError('Fehler beim Laden der Mitarbeiterliste')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadEmployees()
+  }, [loadEmployees])
 
   const resetForm = () => {
     setSelectedUsername('')

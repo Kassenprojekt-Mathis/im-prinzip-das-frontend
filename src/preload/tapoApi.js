@@ -1,19 +1,20 @@
 import { ipcRenderer } from 'electron'
 
-// ── Tapo Lightbulb API ──
 export const tapoApi = {
   /** Blinkt grün (bei erfolgreichem Scan) */
   flashGreen: () => ipcRenderer.invoke('tapo:flashGreen'),
-  /** Blinkt rot (bei Scan-Fehler) */
-  flashRed: () => ipcRenderer.invoke('tapo:flashRed'),
+  /** Blinkt rot (bei Scan-Fehler), returnColor bestimmt die Farbe danach (default: 'white') */
+  flashRed: (returnColor) => ipcRenderer.invoke('tapo:flashRed', returnColor),
+  /** Setzt die Lampe auf Blau (Kunde wartet auf Mitarbeiter) */
+  setBlue: () => ipcRenderer.invoke('tapo:setBlue'),
+  /** Setzt die Lampe auf Weiß (Normalbetrieb / Mitarbeiter angemeldet) */
+  setWhite: (brightness) => ipcRenderer.invoke('tapo:setWhite', brightness),
   /** Setzt eine Farbe */
   setColor: (colour) => ipcRenderer.invoke('tapo:setColor', colour),
-  /** Setzt eine HSL-Farbe */
   setHSL: (hue, saturation, luminance) =>
     ipcRenderer.invoke('tapo:setHSL', hue, saturation, luminance),
-  /** Schaltet die Lampe ein */
+  /** Schaltet die Lampe ein/ aus */
   turnOn: () => ipcRenderer.invoke('tapo:turnOn'),
-  /** Schaltet die Lampe aus */
   turnOff: () => ipcRenderer.invoke('tapo:turnOff'),
   /** Gibt den aktuellen Status der Lampe zurück */
   getStatus: () => ipcRenderer.invoke('tapo:getStatus')

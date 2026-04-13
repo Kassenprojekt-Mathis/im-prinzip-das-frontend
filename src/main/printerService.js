@@ -1,10 +1,3 @@
-//        ₍^. .^₎⟆
-//
-//            /\_/\
-//        = ( • . • ) =
-//            /     \
-//
-
 import {
   POSPrinter,
   POSReceiptBuilder,
@@ -160,6 +153,28 @@ function printReceipt(receiptData) {
       builder.addFeed()
       builder.addComponent(new POSTextBuilder('--------------------------------').build())
 
+      if (receiptData.appliedCoupon) {
+        const coupon = receiptData.appliedCoupon
+        const subtotal = receiptData.subtotal || receiptData.total
+        const subtotalStr = `Zwischensumme: ${subtotal.toFixed(2)} EUR`
+        builder.addComponent(
+          new POSTextBuilder(subtotalStr)
+            .setAlignment(POSTextAlignment.RIGHT)
+            .build()
+        )
+
+        const discountLabel = coupon.ist_prozentual
+          ? `Gutschein ${sanitize(coupon.code)} (${parseFloat(coupon.wert)}%)`
+          : `Gutschein ${sanitize(coupon.code)}`
+        const discountAmt = parseFloat(coupon.discountAmount || coupon.wert).toFixed(2)
+        const discountStr = `-${discountAmt} EUR`
+        const discountPadding = LINE_WIDTH - discountLabel.length - discountStr.length
+        const discountLine = discountLabel + ' '.repeat(Math.max(discountPadding, 1)) + discountStr
+        builder.addComponent(new POSTextBuilder(discountLine).build())
+        builder.addFeed()
+        builder.addComponent(new POSTextBuilder('--------------------------------').build())
+      }
+
       builder.addComponent(
         new POSTextBuilder(`SUMME: ${receiptData.total.toFixed(2)} EUR`)
           .setStyle(POSPrintStyle.BOLD, POSPrintStyle.DOUBLE_HEIGHT)
@@ -174,6 +189,48 @@ function printReceipt(receiptData) {
             .setAlignment(POSTextAlignment.LEFT)
             .build()
         )
+        builder.addFeed()
+      }
+
+      if (receiptData.voucher) {
+        builder.addComponent(new POSTextBuilder('================================').build())
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('*** ECO-GUTSCHEIN ***')
+            .setStyle(POSPrintStyle.BOLD)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder(sanitize(`Code: ${receiptData.voucher.code}`))
+            .setStyle(POSPrintStyle.BOLD)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder(`Wert: ${parseFloat(receiptData.voucher.wert).toFixed(2)} EUR`)
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('Gueltig 3 Monate ab Ausstellung')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(
+          new POSTextBuilder('Einmalig einzuloesen.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addComponent(
+          new POSTextBuilder('Kein Restwert.')
+            .setAlignment(POSTextAlignment.CENTER)
+            .build()
+        )
+        builder.addFeed()
+        builder.addComponent(new POSTextBuilder('================================').build())
         builder.addFeed()
       }
 

@@ -35,7 +35,8 @@ async function connectBulb() {
   try {
     const { cloudLogin, loginDeviceByIp } = await import('tp-link-tapo-connect')
 
-    const cloudToken = await cloudLogin(TAPO_EMAIL, TAPO_PASSWORD)
+    // eslint-disable-next-line no-unused-vars
+    const cloudToken = await cloudLogin(TAPO_EMAIL, TAPO_PASSWORD) //siehe ReadMe "How to set up Lamp"
 
     bulbDevice = await loginDeviceByIp(TAPO_EMAIL, TAPO_PASSWORD, TAPO_BULB_IP)
 
@@ -105,17 +106,18 @@ async function flashGreen(duration = 2000) {
 }
 
 /**
- * for unsuccessful scan -> flash the bulb red for a duration, then return to white
+ * for unsuccessful scan -> flash the bulb red for a duration, then return to returnColor
  * @param {number} duration
+ * @param {string} returnColor - color to return to after the flash (default: 'white')
  */
-async function flashRed(duration = 2000) {
+async function flashRed(duration = 2000, returnColor = 'white') {
   try {
     await setColor('red')
     setTimeout(async () => {
       try {
-        await setColor('white')
+        await setColor(returnColor)
       } catch (err) {
-        console.error('Tapo: Fehler beim Zurücksetzen auf Weiß:', err.message)
+        console.error('Tapo: Fehler beim Zurücksetzen nach flashRed:', err.message)
       }
     }, duration)
     return { success: true }
@@ -154,5 +156,25 @@ async function getStatus() {
     return { success: false, error: err.message }
   }
 }
+async function setBlue() {
+  try {
+    await setColor('blue')
+    return { success: true }
+  } catch (err) {
+    console.error('Tapo setBlue Fehler:', err.message)
+    return { success: false, error: err.message }
+  }
+}
 
-export { flashGreen, flashRed, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }
+export {
+  flashGreen,
+  flashRed,
+  setBlue,
+  setColor,
+  setHSL,
+  setWhite,
+  turnOn,
+  turnOff,
+  getStatus,
+  connectBulb
+}

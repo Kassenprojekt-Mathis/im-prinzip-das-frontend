@@ -1,16 +1,7 @@
-// ─── Scanner API (Model) ───
-// Sendet gescannte Barcodes ans Backend und gibt Produktdaten zurück.
-// Der Barcode entspricht der Produkt-ID in der Datenbank.
-
 const API_BASE_URL = 'http://localhost:8000'
 
 export const scannerApi = {
-  /**
-   * Sendet einen gescannten Barcode ans Backend.
-   * Der Barcode wird als Produkt-ID interpretiert (BigInteger in der DB).
-   * @param {string} barcode – Der gescannte Barcode-String (= Produkt-ID)
-   * @returns {Promise<object>} – Produkt-Daten vom Backend (gemappt auf Frontend-Format)
-   */
+  // Barcode = Produkt-ID in der DB (BigInteger)
   async sendBarcode(barcode) {
     const produktId = parseInt(barcode, 10)
 
@@ -32,7 +23,7 @@ export const scannerApi = {
 
     const produkt = await response.json()
 
-    // Backend-Format (preis, rabatt, ...) auf Frontend-Format (price, discount, ...) mappen
+    // Backend → Frontend-Format mappen
     return {
       id: produkt.id,
       name: produkt.name,

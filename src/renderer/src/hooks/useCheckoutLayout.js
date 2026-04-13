@@ -83,6 +83,7 @@ export function useCheckoutLayout() {
     setShowLogin(false)
     clearModalOpen()
     setShowEmployeeMenu(true)
+    window.api?.tapo?.setWhite() // Lampe weiß für Mitarbeiter, Mitarbeitermenü geöffnet
   }
 
   const handleLoginCancel = () => {

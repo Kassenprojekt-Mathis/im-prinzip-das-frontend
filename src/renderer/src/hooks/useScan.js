@@ -83,13 +83,16 @@ export function useScan() {
       setAgeControlActive(isStillActive)
       setPendingAgeProduct(readPendingAgeProductFromStorage())
 
+      if (isStillActive) {
+        window.api?.tapo?.setBlue() // Lampe blau: Kunde wartet auf Alterskontrolle
+      } else {
+        window.api?.tapo?.setColor('white') // Lampe zurück auf weiß nach Alterskontrolle
+        requestFocus()
+      }
+
       const cartStored = sessionStorage.getItem('cartItemsList')
       if (cartStored) {
         setCartItemsList(JSON.parse(cartStored))
-      }
-
-      if (!isStillActive) {
-        requestFocus()
       }
     }
 

@@ -154,5 +154,25 @@ async function getStatus() {
     return { success: false, error: err.message }
   }
 }
+async function setBlue() {
+  try {
+    await setColor('blue')
+    return { success: true }
+  } catch (err) {
+    console.error('Tapo setBlue Fehler:', err.message)
+    return { success: false, error: err.message }
+  }
+}
 
-export { flashGreen, flashRed, setColor, setHSL, setWhite, turnOn, turnOff, getStatus, connectBulb }
+export {
+  flashGreen,
+  flashRed,
+  setBlue,
+  setColor,
+  setHSL,
+  setWhite,
+  turnOn,
+  turnOff,
+  getStatus,
+  connectBulb
+}

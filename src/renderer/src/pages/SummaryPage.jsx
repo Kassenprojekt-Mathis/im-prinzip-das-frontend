@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useSummary } from '../hooks/useSummary'
 import CustomerCardModal from '../components/CustomerCardModal'
 import QuestionmarkIcon from '../assets/Icons/Questionmark.png'
@@ -7,6 +8,9 @@ import WarningIcon from '../assets/Icons/Warning.png'
 export default function SummaryPage() {
   const vm = useSummary()
 
+  useEffect(() => {
+    window.api?.tapo?.setBlue() // Lampe blau: Kunde wartet auf Mitarbeiter (SummaryPage)
+  }, [])
   return (
     <div className="relative flex flex-col h-full items-center justify-center">
       <div className="p-6 w-full max-w-md">

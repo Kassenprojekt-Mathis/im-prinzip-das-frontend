@@ -35,7 +35,8 @@ async function connectBulb() {
   try {
     const { cloudLogin, loginDeviceByIp } = await import('tp-link-tapo-connect')
 
-    const cloudToken = await cloudLogin(TAPO_EMAIL, TAPO_PASSWORD)
+    // eslint-disable-next-line no-unused-vars
+    const cloudToken = await cloudLogin(TAPO_EMAIL, TAPO_PASSWORD) //siehe ReadMe "How to set up Lamp"
 
     bulbDevice = await loginDeviceByIp(TAPO_EMAIL, TAPO_PASSWORD, TAPO_BULB_IP)
 

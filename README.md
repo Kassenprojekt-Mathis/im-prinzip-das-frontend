@@ -18,6 +18,13 @@ npm run build:win
 npm run build:linux
 ```
 
+### Lampe Set-Up
+
+in .env einfügen:
+
+- Anmeldedaten aus der Tapo Mobile App
+- IP-Addresse der Lampe
+
 ---
 
 ## Tech-Stack

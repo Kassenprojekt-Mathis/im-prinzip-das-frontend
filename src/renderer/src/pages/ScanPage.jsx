@@ -19,10 +19,11 @@ export default function ScanPage() {
   const barcodeRef = useRef(null)
 
   const focusBarcodeInput = useCallback(() => {
-    if (barcodeRef.current && !vm.isModalOpen) {
+    const modalOpen = document.querySelector('[data-modal="true"]') !== null
+    if (barcodeRef.current && !modalOpen) {
       barcodeRef.current.focus()
     }
-  }, [vm.isModalOpen])
+  }, [])
 
   useEffect(() => {
     focusBarcodeInput()
